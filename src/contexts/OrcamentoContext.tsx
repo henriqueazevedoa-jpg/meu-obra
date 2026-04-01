@@ -95,7 +95,7 @@ interface OrcamentoContextType {
 const OrcamentoContext = createContext<OrcamentoContextType | null>(null);
 
 export function OrcamentoProvider({ children }: { children: React.ReactNode }) {
-  const [orcamentos, setOrcamentos] = useState<OrcamentoObra[]>(seedFromMock);
+  const [orcamentos, setOrcamentos] = useState<OrcamentoObra[]>(createSeedOrcamentos);
   const [catalogoCategorias, setCatalogo] = useState<CategoriaTemplate[]>(defaultCategorias);
 
   const getOrcamento = useCallback((obraId: string) => {
