@@ -7,10 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Plus, ChevronDown, ChevronRight } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Trash2, Plus, ChevronDown, ChevronRight, CalendarIcon } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import ComposicaoRow from './ComposicaoRow';
 import { formatCurrency } from '@/data/mockData';
-
+import { cn } from '@/lib/utils';
 interface Props {
   categoria: OrcamentoCategoria;
   unidades: string[];
