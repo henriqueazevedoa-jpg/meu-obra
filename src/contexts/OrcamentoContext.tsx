@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { mockOrcamentoItens } from '@/data/mockData';
 import { catalogoInsumos, categoriasExtras, InsumoTemplate } from '@/data/catalogoInsumos';
+import { createSeedOrcamentos } from '@/data/seedOrcamentos';
 
 // --- Types ---
 export interface OrcamentoSubitem {
@@ -76,39 +76,7 @@ const defaultCategorias: CategoriaTemplate[] = [
   ...categoriasExtras,
 ];
 
-function seedFromMock(): OrcamentoObra[] {
-  const byObra = new Map<string, OrcamentoCategoria[]>();
-  for (const item of mockOrcamentoItens) {
-    if (!byObra.has(item.obraId)) byObra.set(item.obraId, []);
-    const cats = byObra.get(item.obraId)!;
-    let cat = cats.find(c => c.nome === item.categoria);
-    if (!cat) {
-      const tpl = defaultCategorias.find(t => t.nome === item.categoria);
-      cat = {
-        id: `cat-${item.id}`,
-        codigo: tpl?.codigo || `CAT-${String(cats.length + 1).padStart(3, '0')}`,
-        nome: item.categoria,
-        precoTotal: 0,
-        usaComposicoes: true,
-        composicoes: [],
-      };
-      cats.push(cat);
-    }
-    cat.composicoes.push({
-      id: item.id,
-      codigo: item.id.toUpperCase(),
-      descricao: item.descricao,
-      unidade: item.unidade,
-      quantidade: item.quantidade,
-      precoUnitario: item.custoUnitarioPrevisto,
-      precoTotal: item.custoTotalPrevisto,
-      subitens: [],
-      usaSubitens: false,
-    });
-    cat.precoTotal = cat.composicoes.reduce((s, c) => s + c.precoTotal, 0);
-  }
-  return Array.from(byObra.entries()).map(([obraId, categorias]) => ({ obraId, categorias }));
-}
+// Seed data is now in src/data/seedOrcamentos.ts
 
 interface OrcamentoContextType {
   orcamentos: OrcamentoObra[];
@@ -127,7 +95,7 @@ interface OrcamentoContextType {
 const OrcamentoContext = createContext<OrcamentoContextType | null>(null);
 
 export function OrcamentoProvider({ children }: { children: React.ReactNode }) {
-  const [orcamentos, setOrcamentos] = useState<OrcamentoObra[]>(seedFromMock);
+  const [orcamentos, setOrcamentos] = useState<OrcamentoObra[]>(createSeedOrcamentos);
   const [catalogoCategorias, setCatalogo] = useState<CategoriaTemplate[]>(defaultCategorias);
 
   const getOrcamento = useCallback((obraId: string) => {
