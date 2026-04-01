@@ -1,23 +1,37 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { mockOrcamentoItens, mockCronograma, mockDiario, mockMateriais, formatCurrency, formatDate, statusObraLabels, statusEtapaLabels } from '@/data/mockData';
+import { Button } from '@/components/ui/button';
+import { formatCurrency, formatDate, statusObraLabels } from '@/data/mockData';
 import { useObras } from '@/contexts/ObrasContext';
-import { ArrowLeft, MapPin, Calendar, User } from 'lucide-react';
+import { useOrcamento } from '@/contexts/OrcamentoContext';
+import { ArrowLeft, MapPin, Calendar, User, FileText, ClipboardList } from 'lucide-react';
+
+const statusEtapaLabelsLocal: Record<string, string> = {
+  nao_iniciada: 'Não Iniciada',
+  em_andamento: 'Em Andamento',
+  concluida: 'Concluída',
+  atrasada: 'Atrasada',
+};
 
 export default function ObraDetalhePage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { getObra } = useObras();
+  const { getOrcamento } = useOrcamento();
   const obra = id ? getObra(id) : undefined;
   if (!obra) return <div className="p-8 text-center text-muted-foreground">Obra não encontrada</div>;
 
-  const totalPrevisto = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoTotalPrevisto, 0);
-  const totalRealizado = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoRealizado, 0);
-  const etapas = mockCronograma.filter(e => e.obraId === obra.id);
-  const registros = mockDiario.filter(d => d.obraId === obra.id);
-  const materiais = mockMateriais.filter(m => m.obraId === obra.id);
+  const orcamento = getOrcamento(obra.id);
+  const categorias = orcamento?.categorias ?? [];
+
+  const totalPrevisto = categorias.reduce((s, c) => s + c.precoTotal, 0);
+  const etapasComDatas = categorias.filter(c => c.dataInicioPrevista || c.dataInicioReal);
+  const progressoGeral = categorias.length > 0
+    ? Math.round(categorias.reduce((s, c) => s + (c.percentualCronograma ?? 0), 0) / categorias.length)
+    : obra.percentualAndamento;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -30,9 +44,17 @@ export default function ObraDetalhePage() {
           <p className="text-xs text-muted-foreground font-mono">{obra.codigo}</p>
           <h1 className="text-2xl font-bold text-foreground">{obra.nome}</h1>
         </div>
-        <Badge variant="secondary" className="bg-success/10 text-success border-0 self-start">
-          {statusObraLabels[obra.status]}
-        </Badge>
+        <div className="flex items-center gap-2 self-start">
+          <Badge variant="secondary" className="bg-success/10 text-success border-0">
+            {statusObraLabels[obra.status]}
+          </Badge>
+          <Button size="sm" variant="outline" onClick={() => navigate(`/orcamento?obra=${obra.id}`)}>
+            <FileText className="h-4 w-4 mr-1" /> Orçamento
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => navigate(`/cronograma?obra=${obra.id}`)}>
+            <ClipboardList className="h-4 w-4 mr-1" /> Cronograma
+          </Button>
+        </div>
       </div>
 
       <div className="grid sm:grid-cols-3 gap-3 text-sm text-muted-foreground">
@@ -45,14 +67,14 @@ export default function ObraDetalhePage() {
         <CardContent className="p-5">
           <div className="flex justify-between text-sm mb-2">
             <span className="text-muted-foreground">Progresso Geral</span>
-            <span className="font-bold text-foreground">{obra.percentualAndamento}%</span>
+            <span className="font-bold text-foreground">{progressoGeral}%</span>
           </div>
-          <Progress value={obra.percentualAndamento} className="h-3" />
+          <Progress value={progressoGeral} className="h-3" />
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
             <div><p className="text-xs text-muted-foreground">Previsto</p><p className="font-semibold text-foreground">{formatCurrency(totalPrevisto)}</p></div>
-            <div><p className="text-xs text-muted-foreground">Realizado</p><p className="font-semibold text-foreground">{formatCurrency(totalRealizado)}</p></div>
-            <div><p className="text-xs text-muted-foreground">Etapas</p><p className="font-semibold text-foreground">{etapas.length}</p></div>
-            <div><p className="text-xs text-muted-foreground">Materiais</p><p className="font-semibold text-foreground">{materiais.length}</p></div>
+            <div><p className="text-xs text-muted-foreground">Categorias</p><p className="font-semibold text-foreground">{categorias.length}</p></div>
+            <div><p className="text-xs text-muted-foreground">Etapas c/ Datas</p><p className="font-semibold text-foreground">{etapasComDatas.length}</p></div>
+            <div><p className="text-xs text-muted-foreground">Composições</p><p className="font-semibold text-foreground">{categorias.reduce((s, c) => s + c.composicoes.length, 0)}</p></div>
           </div>
         </CardContent>
       </Card>
@@ -61,74 +83,59 @@ export default function ObraDetalhePage() {
         <TabsList>
           <TabsTrigger value="cronograma">Cronograma</TabsTrigger>
           <TabsTrigger value="orcamento">Orçamento</TabsTrigger>
-          <TabsTrigger value="diario">Diário</TabsTrigger>
-          <TabsTrigger value="materiais">Materiais</TabsTrigger>
         </TabsList>
+
         <TabsContent value="cronograma" className="mt-4 space-y-2">
-          {etapas.map(e => (
-            <div key={e.id} className="flex items-center justify-between p-3 bg-card rounded-lg border border-border">
+          {categorias.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhuma etapa cadastrada. Acesse o Orçamento para criar categorias.</p>}
+          {categorias.map(cat => (
+            <div key={cat.id} className="flex items-center justify-between p-3 bg-card rounded-lg border border-border">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">{e.nome}</p>
-                <p className="text-xs text-muted-foreground">{formatDate(e.dataInicioPrevista)} → {formatDate(e.dataFimPrevista)}</p>
+                <p className="text-sm font-medium text-foreground">{cat.nome}</p>
+                <p className="text-xs text-muted-foreground">
+                  {cat.dataInicioPrevista ? formatDate(cat.dataInicioPrevista) : '—'} → {cat.dataFimPrevista ? formatDate(cat.dataFimPrevista) : '—'}
+                </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-xs font-medium text-muted-foreground">{e.percentual}%</span>
+                <span className="text-xs font-medium text-muted-foreground">{cat.percentualCronograma ?? 0}%</span>
                 <Badge variant="secondary" className={
-                  e.status === 'concluida' ? 'bg-success/10 text-success border-0' :
-                  e.status === 'atrasada' ? 'bg-destructive/10 text-destructive border-0' :
-                  e.status === 'em_andamento' ? 'bg-primary/10 text-primary border-0' :
+                  cat.statusCronograma === 'concluida' ? 'bg-success/10 text-success border-0' :
+                  cat.statusCronograma === 'atrasada' ? 'bg-destructive/10 text-destructive border-0' :
+                  cat.statusCronograma === 'em_andamento' ? 'bg-primary/10 text-primary border-0' :
                   'bg-muted text-muted-foreground border-0'
-                }>{statusEtapaLabels[e.status]}</Badge>
+                }>{statusEtapaLabelsLocal[cat.statusCronograma ?? 'nao_iniciada']}</Badge>
               </div>
             </div>
           ))}
         </TabsContent>
+
         <TabsContent value="orcamento" className="mt-4">
+          {categorias.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhuma categoria no orçamento.</p>}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="border-b border-border">
+                <th className="text-left p-2 text-muted-foreground font-medium">Código</th>
                 <th className="text-left p-2 text-muted-foreground font-medium">Categoria</th>
-                <th className="text-right p-2 text-muted-foreground font-medium">Previsto</th>
-                <th className="text-right p-2 text-muted-foreground font-medium">Realizado</th>
+                <th className="text-right p-2 text-muted-foreground font-medium">Composições</th>
+                <th className="text-right p-2 text-muted-foreground font-medium">Total Previsto</th>
               </tr></thead>
               <tbody>
-                {mockOrcamentoItens.filter(i => i.obraId === obra.id).map(item => (
-                  <tr key={item.id} className="border-b border-border">
-                    <td className="p-2 text-foreground">{item.categoria}</td>
-                    <td className="p-2 text-right text-foreground">{formatCurrency(item.custoTotalPrevisto)}</td>
-                    <td className="p-2 text-right text-foreground">{formatCurrency(item.custoRealizado)}</td>
+                {categorias.map(cat => (
+                  <tr key={cat.id} className="border-b border-border">
+                    <td className="p-2 text-muted-foreground font-mono text-xs">{cat.codigo}</td>
+                    <td className="p-2 text-foreground">{cat.nome}</td>
+                    <td className="p-2 text-right text-foreground">{cat.composicoes.length}</td>
+                    <td className="p-2 text-right text-foreground">{formatCurrency(cat.precoTotal)}</td>
                   </tr>
                 ))}
+                {categorias.length > 0 && (
+                  <tr className="font-bold">
+                    <td className="p-2" colSpan={3}>Total</td>
+                    <td className="p-2 text-right text-foreground">{formatCurrency(totalPrevisto)}</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
-        </TabsContent>
-        <TabsContent value="diario" className="mt-4 space-y-2">
-          {registros.slice(0, 5).map(d => (
-            <Card key={d.id} className="shadow-card">
-              <CardContent className="p-3">
-                <div className="flex justify-between items-center">
-                  <p className="text-sm font-medium text-foreground">{formatDate(d.data)}</p>
-                  <Badge variant="secondary" className={d.status === 'aprovado' ? 'bg-success/10 text-success border-0' : 'bg-warning/10 text-warning border-0'}>{d.status}</Badge>
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">{d.servicosExecutados}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
-        <TabsContent value="materiais" className="mt-4 space-y-2">
-          {materiais.map(m => (
-            <div key={m.id} className="flex items-center justify-between p-3 bg-card rounded-lg border border-border">
-              <div>
-                <p className="text-sm font-medium text-foreground">{m.nome}</p>
-                <p className="text-xs text-muted-foreground">{m.categoria} · {m.unidade}</p>
-              </div>
-              <div className="text-right">
-                <p className={`text-sm font-semibold ${m.estoqueAtual < m.estoqueMinimo ? 'text-destructive' : 'text-foreground'}`}>{m.estoqueAtual} {m.unidade}</p>
-                {m.estoqueAtual < m.estoqueMinimo && <p className="text-xs text-destructive">Estoque baixo</p>}
-              </div>
-            </div>
-          ))}
         </TabsContent>
       </Tabs>
     </div>
