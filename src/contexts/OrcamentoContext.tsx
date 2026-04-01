@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { mockOrcamentoItens } from '@/data/mockData';
 import { catalogoInsumos, categoriasExtras, InsumoTemplate } from '@/data/catalogoInsumos';
+import { createSeedOrcamentos } from '@/data/seedOrcamentos';
 
 // --- Types ---
 export interface OrcamentoSubitem {
