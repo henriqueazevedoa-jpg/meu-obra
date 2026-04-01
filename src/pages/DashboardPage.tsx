@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { useObras } from '@/contexts/ObrasContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -9,13 +10,14 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  mockObras, mockOrcamentoItens, mockCronograma, mockDiario,
+  mockOrcamentoItens, mockCronograma, mockDiario,
   mockMateriais, mockMovimentacoes, formatCurrency, formatDate,
   statusEtapaLabels, statusDiarioLabels, climaLabels
 } from '@/data/mockData';
 
 function GestorDashboard() {
-  const obra = mockObras[0];
+  const { obras } = useObras();
+  const obra = obras[0];
   const totalPrevisto = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoTotalPrevisto, 0);
   const totalRealizado = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoRealizado, 0);
   const etapasAtrasadas = mockCronograma.filter(e => e.obraId === obra.id && e.status === 'atrasada').length;
@@ -37,7 +39,7 @@ function GestorDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground font-medium">Obras Ativas</p>
-                <p className="text-2xl font-bold text-foreground">{mockObras.filter(o => o.status === 'em_andamento').length}</p>
+                <p className="text-2xl font-bold text-foreground">{obras.filter(o => o.status === 'em_andamento').length}</p>
               </div>
               <Building2 className="h-8 w-8 text-primary/30" />
             </div>
@@ -188,7 +190,8 @@ function GestorDashboard() {
 }
 
 function FuncionarioDashboard() {
-  const obra = mockObras[0];
+  const { obras } = useObras();
+  const obra = obras[0];
   const meusRegistros = mockDiario.filter(d => d.usuarioId === 'u2');
   const etapasAndamento = mockCronograma.filter(e => e.obraId === obra.id && e.status === 'em_andamento');
 
@@ -268,7 +271,8 @@ function FuncionarioDashboard() {
 }
 
 function ClienteDashboard() {
-  const obra = mockObras[0];
+  const { obras } = useObras();
+  const obra = obras[0];
   const totalPrevisto = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoTotalPrevisto, 0);
   const totalRealizado = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoRealizado, 0);
   const registrosAprovados = mockDiario.filter(d => d.obraId === obra.id && d.status === 'aprovado');

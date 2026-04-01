@@ -3,12 +3,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { mockObras, mockOrcamentoItens, mockCronograma, mockDiario, mockMateriais, formatCurrency, formatDate, statusObraLabels, statusEtapaLabels } from '@/data/mockData';
+import { mockOrcamentoItens, mockCronograma, mockDiario, mockMateriais, formatCurrency, formatDate, statusObraLabels, statusEtapaLabels } from '@/data/mockData';
+import { useObras } from '@/contexts/ObrasContext';
 import { ArrowLeft, MapPin, Calendar, User } from 'lucide-react';
 
 export default function ObraDetalhePage() {
   const { id } = useParams();
-  const obra = mockObras.find(o => o.id === id);
+  const { getObra } = useObras();
+  const obra = id ? getObra(id) : undefined;
   if (!obra) return <div className="p-8 text-center text-muted-foreground">Obra não encontrada</div>;
 
   const totalPrevisto = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoTotalPrevisto, 0);

@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { useObras } from '@/contexts/ObrasContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -8,9 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { mockObras, statusObraLabels, formatDate, Obra } from '@/data/mockData';
-import { Search, Plus, MapPin, Calendar } from 'lucide-react';
-import { useState } from 'react';
+import { statusObraLabels, formatDate, Obra } from '@/data/mockData';
+import { Search, Plus, MapPin, Calendar, Pencil, Trash2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 
@@ -21,44 +22,109 @@ const statusColors: Record<string, string> = {
   concluida: 'bg-primary/10 text-primary border-0',
 };
 
+const emptyForm = {
+  nome: '',
+  codigo: '',
+  cliente: '',
+  endereco: '',
+  status: 'planejamento' as Obra['status'],
+  dataInicio: '',
+  dataPrevisaoTermino: '',
+  responsavel: '',
+  descricao: '',
+};
+
 export default function ObrasPage() {
   const { user, hasPermission } = useAuth();
+  const { obras, addObra, updateObra, deleteObra, generateCodigo, getResponsaveis } = useObras();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [obras, setObras] = useState<Obra[]>(mockObras);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [showResponsavelList, setShowResponsavelList] = useState(false);
+  const responsavelRef = useRef<HTMLDivElement>(null);
 
-  const [form, setForm] = useState({
-    nome: '',
-    codigo: '',
-    cliente: '',
-    endereco: '',
-    status: 'planejamento' as Obra['status'],
-    dataInicio: '',
-    dataPrevisaoTermino: '',
-    responsavel: '',
-    descricao: '',
-  });
+  const responsaveis = getResponsaveis();
+  const filteredResponsaveis = responsaveis.filter(r =>
+    r.toLowerCase().includes(form.responsavel.toLowerCase()) && r !== form.responsavel
+  );
 
   const filtered = obras
     .filter(o => user?.obraIds.includes(o.id) || user?.role === 'gestor')
     .filter(o => !search || o.nome.toLowerCase().includes(search.toLowerCase()) || o.codigo.toLowerCase().includes(search.toLowerCase()))
     .filter(o => !statusFilter || o.status === statusFilter);
 
-  const handleCreate = () => {
-    if (!form.nome || !form.codigo) {
-      toast({ title: 'Preencha ao menos o nome e código da obra.', variant: 'destructive' });
+  // Close responsavel dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (responsavelRef.current && !responsavelRef.current.contains(e.target as Node)) {
+        setShowResponsavelList(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const openCreateDialog = () => {
+    setEditingId(null);
+    setForm({ ...emptyForm, codigo: generateCodigo() });
+    setDialogOpen(true);
+  };
+
+  const openEditDialog = (obra: Obra, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditingId(obra.id);
+    setForm({
+      nome: obra.nome,
+      codigo: obra.codigo,
+      cliente: obra.cliente,
+      endereco: obra.endereco,
+      status: obra.status,
+      dataInicio: obra.dataInicio,
+      dataPrevisaoTermino: obra.dataPrevisaoTermino,
+      responsavel: obra.responsavel,
+      descricao: obra.descricao,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!form.nome) {
+      toast({ title: 'Preencha ao menos o nome da obra.', variant: 'destructive' });
       return;
     }
-    const newObra: Obra = {
-      id: `obra-${Date.now()}`,
-      ...form,
-      percentualAndamento: 0,
-    };
-    setObras(prev => [...prev, newObra]);
+    if (editingId) {
+      updateObra(editingId, form);
+      toast({ title: 'Obra atualizada com sucesso!' });
+    } else {
+      const newObra: Obra = {
+        id: `obra-${Date.now()}`,
+        ...form,
+        percentualAndamento: 0,
+      };
+      addObra(newObra);
+      toast({ title: 'Obra criada com sucesso!' });
+    }
     setDialogOpen(false);
-    setForm({ nome: '', codigo: '', cliente: '', endereco: '', status: 'planejamento', dataInicio: '', dataPrevisaoTermino: '', responsavel: '', descricao: '' });
-    toast({ title: 'Obra criada com sucesso!' });
+    setForm(emptyForm);
+    setEditingId(null);
+  };
+
+  const handleDelete = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDeleteConfirmId(id);
+  };
+
+  const confirmDelete = () => {
+    if (deleteConfirmId) {
+      deleteObra(deleteConfirmId);
+      toast({ title: 'Obra excluída.' });
+      setDeleteConfirmId(null);
+    }
   };
 
   return (
@@ -69,7 +135,7 @@ export default function ObrasPage() {
           <p className="text-muted-foreground text-sm">{filtered.length} obra(s) encontrada(s)</p>
         </div>
         {hasPermission('obras:create') && (
-          <Button onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-1" /> Nova Obra</Button>
+          <Button onClick={openCreateDialog}><Plus className="h-4 w-4 mr-1" /> Nova Obra</Button>
         )}
       </div>
 
@@ -103,9 +169,21 @@ export default function ObrasPage() {
                     <p className="text-xs text-muted-foreground font-mono">{obra.codigo}</p>
                     <h3 className="text-base font-semibold text-foreground">{obra.nome}</h3>
                   </div>
-                  <Badge variant="secondary" className={statusColors[obra.status]}>
-                    {statusObraLabels[obra.status]}
-                  </Badge>
+                  <div className="flex items-center gap-1">
+                    {hasPermission('obras:edit') && (
+                      <>
+                        <button onClick={(e) => openEditDialog(obra, e)} className="p-1.5 rounded-md hover:bg-accent transition-colors" title="Editar">
+                          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                        </button>
+                        <button onClick={(e) => handleDelete(obra.id, e)} className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors" title="Excluir">
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </button>
+                      </>
+                    )}
+                    <Badge variant="secondary" className={statusColors[obra.status]}>
+                      {statusObraLabels[obra.status]}
+                    </Badge>
+                  </div>
                 </div>
                 <div className="space-y-2 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
@@ -114,7 +192,7 @@ export default function ObrasPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-3.5 w-3.5" />
-                    <span>{formatDate(obra.dataInicio)} → {formatDate(obra.dataPrevisaoTermino)}</span>
+                    <span>{obra.dataInicio ? formatDate(obra.dataInicio) : '—'} → {obra.dataPrevisaoTermino ? formatDate(obra.dataPrevisaoTermino) : '—'}</span>
                   </div>
                 </div>
                 <div className="mt-4 space-y-1">
@@ -130,12 +208,12 @@ export default function ObrasPage() {
         ))}
       </div>
 
-      {/* Dialog Nova Obra */}
+      {/* Dialog Criar/Editar Obra */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Nova Obra</DialogTitle>
-            <DialogDescription>Preencha os dados para cadastrar uma nova obra.</DialogDescription>
+            <DialogTitle>{editingId ? 'Editar Obra' : 'Nova Obra'}</DialogTitle>
+            <DialogDescription>{editingId ? 'Atualize os dados da obra.' : 'Preencha os dados para cadastrar uma nova obra.'}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
             <div className="grid grid-cols-2 gap-4">
@@ -144,8 +222,8 @@ export default function ObrasPage() {
                 <Input id="nome" value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="codigo">Código *</Label>
-                <Input id="codigo" value={form.codigo} onChange={e => setForm(f => ({ ...f, codigo: e.target.value }))} />
+                <Label htmlFor="codigo">Código</Label>
+                <Input id="codigo" value={form.codigo} disabled className="bg-muted" />
               </div>
             </div>
             <div className="space-y-1.5">
@@ -179,9 +257,29 @@ export default function ObrasPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 relative" ref={responsavelRef}>
                 <Label htmlFor="responsavel">Responsável</Label>
-                <Input id="responsavel" value={form.responsavel} onChange={e => setForm(f => ({ ...f, responsavel: e.target.value }))} />
+                <Input
+                  id="responsavel"
+                  value={form.responsavel}
+                  onChange={e => { setForm(f => ({ ...f, responsavel: e.target.value })); setShowResponsavelList(true); }}
+                  onFocus={() => setShowResponsavelList(true)}
+                  autoComplete="off"
+                />
+                {showResponsavelList && filteredResponsaveis.length > 0 && (
+                  <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-md max-h-32 overflow-y-auto">
+                    {filteredResponsaveis.map(r => (
+                      <button
+                        key={r}
+                        type="button"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors text-foreground"
+                        onClick={() => { setForm(f => ({ ...f, responsavel: r })); setShowResponsavelList(false); }}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <div className="space-y-1.5">
@@ -191,7 +289,21 @@ export default function ObrasPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleCreate}>Criar Obra</Button>
+            <Button onClick={handleSave}>{editingId ? 'Salvar' : 'Criar Obra'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Confirmar Exclusão */}
+      <Dialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir Obra</DialogTitle>
+            <DialogDescription>Tem certeza que deseja excluir esta obra? Esta ação não pode ser desfeita.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmDelete}>Excluir</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
