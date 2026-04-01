@@ -1,13 +1,18 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { mockObras, statusObraLabels, formatDate } from '@/data/mockData';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { mockObras, statusObraLabels, formatDate, Obra } from '@/data/mockData';
 import { Search, Plus, MapPin, Calendar } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from '@/hooks/use-toast';
 
 const statusColors: Record<string, string> = {
   planejamento: 'bg-muted text-muted-foreground border-0',
@@ -20,21 +25,51 @@ export default function ObrasPage() {
   const { user, hasPermission } = useAuth();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [obras, setObras] = useState<Obra[]>(mockObras);
 
-  const obras = mockObras
+  const [form, setForm] = useState({
+    nome: '',
+    codigo: '',
+    cliente: '',
+    endereco: '',
+    status: 'planejamento' as Obra['status'],
+    dataInicio: '',
+    dataPrevisaoTermino: '',
+    responsavel: '',
+    descricao: '',
+  });
+
+  const filtered = obras
     .filter(o => user?.obraIds.includes(o.id) || user?.role === 'gestor')
     .filter(o => !search || o.nome.toLowerCase().includes(search.toLowerCase()) || o.codigo.toLowerCase().includes(search.toLowerCase()))
     .filter(o => !statusFilter || o.status === statusFilter);
+
+  const handleCreate = () => {
+    if (!form.nome || !form.codigo) {
+      toast({ title: 'Preencha ao menos o nome e código da obra.', variant: 'destructive' });
+      return;
+    }
+    const newObra: Obra = {
+      id: `obra-${Date.now()}`,
+      ...form,
+      percentualAndamento: 0,
+    };
+    setObras(prev => [...prev, newObra]);
+    setDialogOpen(false);
+    setForm({ nome: '', codigo: '', cliente: '', endereco: '', status: 'planejamento', dataInicio: '', dataPrevisaoTermino: '', responsavel: '', descricao: '' });
+    toast({ title: 'Obra criada com sucesso!' });
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Obras</h1>
-          <p className="text-muted-foreground text-sm">{obras.length} obra(s) encontrada(s)</p>
+          <p className="text-muted-foreground text-sm">{filtered.length} obra(s) encontrada(s)</p>
         </div>
         {hasPermission('obras:create') && (
-          <Button><Plus className="h-4 w-4 mr-1" /> Nova Obra</Button>
+          <Button onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4 mr-1" /> Nova Obra</Button>
         )}
       </div>
 
@@ -59,7 +94,7 @@ export default function ObrasPage() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
-        {obras.map(obra => (
+        {filtered.map(obra => (
           <Link key={obra.id} to={`/obras/${obra.id}`}>
             <Card className="shadow-card hover:shadow-card-hover transition-shadow cursor-pointer">
               <CardContent className="p-5">
@@ -94,6 +129,72 @@ export default function ObrasPage() {
           </Link>
         ))}
       </div>
+
+      {/* Dialog Nova Obra */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Nova Obra</DialogTitle>
+            <DialogDescription>Preencha os dados para cadastrar uma nova obra.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="nome">Nome da obra *</Label>
+                <Input id="nome" value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="codigo">Código *</Label>
+                <Input id="codigo" value={form.codigo} onChange={e => setForm(f => ({ ...f, codigo: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cliente">Cliente</Label>
+              <Input id="cliente" value={form.cliente} onChange={e => setForm(f => ({ ...f, cliente: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="endereco">Endereço</Label>
+              <Input id="endereco" value={form.endereco} onChange={e => setForm(f => ({ ...f, endereco: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="dataInicio">Data de início</Label>
+                <Input id="dataInicio" type="date" value={form.dataInicio} onChange={e => setForm(f => ({ ...f, dataInicio: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="dataFim">Previsão de término</Label>
+                <Input id="dataFim" type="date" value={form.dataPrevisaoTermino} onChange={e => setForm(f => ({ ...f, dataPrevisaoTermino: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Status</Label>
+                <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v as Obra['status'] }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="planejamento">Planejamento</SelectItem>
+                    <SelectItem value="em_andamento">Em andamento</SelectItem>
+                    <SelectItem value="pausada">Pausada</SelectItem>
+                    <SelectItem value="concluida">Concluída</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="responsavel">Responsável</Label>
+                <Input id="responsavel" value={form.responsavel} onChange={e => setForm(f => ({ ...f, responsavel: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="descricao">Descrição</Label>
+              <Textarea id="descricao" value={form.descricao} onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))} rows={3} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreate}>Criar Obra</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
