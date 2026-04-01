@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { mockOrcamentoItens } from '@/data/mockData';
+import { catalogoInsumos, categoriasExtras, InsumoTemplate } from '@/data/catalogoInsumos';
 
 // --- Types ---
 export interface OrcamentoSubitem {
@@ -38,13 +39,12 @@ export interface OrcamentoObra {
   categorias: OrcamentoCategoria[];
 }
 
-// Catálogo global de categorias já usadas
 export interface CategoriaTemplate {
   codigo: string;
   nome: string;
 }
 
-// Default suggested categories for construction
+// Default suggested categories
 const defaultCategorias: CategoriaTemplate[] = [
   { codigo: 'CAT-001', nome: 'Serviços Preliminares' },
   { codigo: 'CAT-002', nome: 'Fundação' },
@@ -59,9 +59,9 @@ const defaultCategorias: CategoriaTemplate[] = [
   { codigo: 'CAT-011', nome: 'Esquadrias' },
   { codigo: 'CAT-012', nome: 'Louças e Metais' },
   { codigo: 'CAT-013', nome: 'Limpeza Final' },
+  ...categoriasExtras,
 ];
 
-// Seed from mock data
 function seedFromMock(): OrcamentoObra[] {
   const byObra = new Map<string, OrcamentoCategoria[]>();
   for (const item of mockOrcamentoItens) {
@@ -104,6 +104,10 @@ interface OrcamentoContextType {
   addCategoriaToCatalogo: (cat: CategoriaTemplate) => void;
   generateCategoriaCodigo: () => string;
   getUnidadesUsadas: () => string[];
+  getSugestaoInsumos: (categoriaNome: string) => InsumoTemplate[];
+  getComposicoesUsadasPorCategoria: (categoriaNome: string) => { descricao: string; unidade: string }[];
+  generateComposicaoCodigo: (categoriaCode: string, existingCodes: string[]) => string;
+  generateSubitemCodigo: (composicaoCodigo: string, existingCodes: string[]) => string;
 }
 
 const OrcamentoContext = createContext<OrcamentoContextType | null>(null);
@@ -126,7 +130,6 @@ export function OrcamentoProvider({ children }: { children: React.ReactNode }) {
       }
       return [...prev, orc];
     });
-    // Add any new categories to catalog
     for (const cat of orc.categorias) {
       setCatalogo(prev => {
         if (prev.some(c => c.codigo === cat.codigo)) return prev;
@@ -150,10 +153,29 @@ export function OrcamentoProvider({ children }: { children: React.ReactNode }) {
     return `CAT-${String(next).padStart(3, '0')}`;
   }, [catalogoCategorias]);
 
+  const generateComposicaoCodigo = useCallback((categoriaCode: string, existingCodes: string[]) => {
+    const prefix = categoriaCode.replace('CAT-', 'COMP-');
+    let max = 0;
+    for (const code of existingCodes) {
+      const m = code.match(new RegExp(`^${prefix}-(\\d+)$`));
+      if (m) max = Math.max(max, parseInt(m[1]));
+    }
+    return `${prefix}-${String(max + 1).padStart(2, '0')}`;
+  }, []);
+
+  const generateSubitemCodigo = useCallback((composicaoCodigo: string, existingCodes: string[]) => {
+    const prefix = composicaoCodigo.replace('COMP-', 'SUB-');
+    let max = 0;
+    for (const code of existingCodes) {
+      const m = code.match(new RegExp(`^${prefix}-(\\d+)$`));
+      if (m) max = Math.max(max, parseInt(m[1]));
+    }
+    return `${prefix}-${String(max + 1).padStart(2, '0')}`;
+  }, []);
+
   const getUnidadesUsadas = useCallback(() => {
     const set = new Set<string>();
-    set.add('vb'); set.add('m²'); set.add('m³'); set.add('m'); set.add('un'); set.add('kg');
-    set.add('saco'); set.add('barra'); set.add('rolo'); set.add('l'); set.add('t');
+    ['vb', 'm²', 'm³', 'm', 'un', 'kg', 'saco', 'barra', 'rolo', 'l', 't', 'mês', 'dia', 'h'].forEach(u => set.add(u));
     for (const orc of orcamentos) {
       for (const cat of orc.categorias) {
         for (const comp of cat.composicoes) {
@@ -167,8 +189,47 @@ export function OrcamentoProvider({ children }: { children: React.ReactNode }) {
     return Array.from(set).sort();
   }, [orcamentos]);
 
+  // Return catalog items + items used in any obra for a given category
+  const getSugestaoInsumos = useCallback((categoriaNome: string): InsumoTemplate[] => {
+    const fromCatalog = catalogoInsumos.filter(i => i.categoriaRef === categoriaNome);
+    // Also collect from existing orcamentos
+    const fromExisting: InsumoTemplate[] = [];
+    for (const orc of orcamentos) {
+      for (const cat of orc.categorias) {
+        if (cat.nome === categoriaNome) {
+          for (const comp of cat.composicoes) {
+            if (comp.descricao && !fromCatalog.some(c => c.descricao === comp.descricao) && !fromExisting.some(e => e.descricao === comp.descricao)) {
+              fromExisting.push({ descricao: comp.descricao, unidade: comp.unidade, categoriaRef: categoriaNome });
+            }
+          }
+        }
+      }
+    }
+    return [...fromCatalog, ...fromExisting];
+  }, [orcamentos]);
+
+  const getComposicoesUsadasPorCategoria = useCallback((categoriaNome: string) => {
+    const result: { descricao: string; unidade: string }[] = [];
+    for (const orc of orcamentos) {
+      for (const cat of orc.categorias) {
+        if (cat.nome === categoriaNome) {
+          for (const comp of cat.composicoes) {
+            if (comp.descricao && !result.some(r => r.descricao === comp.descricao)) {
+              result.push({ descricao: comp.descricao, unidade: comp.unidade });
+            }
+          }
+        }
+      }
+    }
+    return result;
+  }, [orcamentos]);
+
   return (
-    <OrcamentoContext.Provider value={{ orcamentos, getOrcamento, saveOrcamento, catalogoCategorias, addCategoriaToCatalogo, generateCategoriaCodigo, getUnidadesUsadas }}>
+    <OrcamentoContext.Provider value={{
+      orcamentos, getOrcamento, saveOrcamento, catalogoCategorias, addCategoriaToCatalogo,
+      generateCategoriaCodigo, getUnidadesUsadas, getSugestaoInsumos, getComposicoesUsadasPorCategoria,
+      generateComposicaoCodigo, generateSubitemCodigo,
+    }}>
       {children}
     </OrcamentoContext.Provider>
   );

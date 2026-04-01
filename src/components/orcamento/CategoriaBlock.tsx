@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { OrcamentoCategoria, OrcamentoComposicao } from '@/contexts/OrcamentoContext';
+import { InsumoTemplate } from '@/data/catalogoInsumos';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trash2, Plus, ChevronDown, ChevronRight } from 'lucide-react';
 import ComposicaoRow from './ComposicaoRow';
 import { formatCurrency } from '@/data/mockData';
@@ -14,10 +16,19 @@ interface Props {
   unidades: string[];
   onChange: (updated: OrcamentoCategoria) => void;
   onRemove: () => void;
+  getSugestaoInsumos: (categoriaNome: string) => InsumoTemplate[];
+  generateComposicaoCodigo: (catCode: string, existing: string[]) => string;
+  generateSubitemCodigo: (compCode: string, existing: string[]) => string;
 }
 
-export default function CategoriaBlock({ categoria, unidades, onChange, onRemove }: Props) {
+export default function CategoriaBlock({ categoria, unidades, onChange, onRemove, getSugestaoInsumos, generateComposicaoCodigo, generateSubitemCodigo }: Props) {
   const [expanded, setExpanded] = useState(true);
+  const [addMode, setAddMode] = useState<'manual' | 'sugestao'>('sugestao');
+  const [selectedInsumo, setSelectedInsumo] = useState('');
+
+  const sugestoes = getSugestaoInsumos(categoria.nome);
+  const existingDescricoes = categoria.composicoes.map(c => c.descricao);
+  const availableSugestoes = sugestoes.filter(s => !existingDescricoes.includes(s.descricao));
 
   const update = (field: string, value: any) => {
     const next = { ...categoria, [field]: value };
@@ -30,17 +41,20 @@ export default function CategoriaBlock({ categoria, unidades, onChange, onRemove
     onChange(next);
   };
 
-  const makeComposicao = (): OrcamentoComposicao => ({
-    id: `comp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    codigo: '',
-    descricao: '',
-    unidade: '',
-    quantidade: null,
-    precoUnitario: null,
-    precoTotal: 0,
-    subitens: [],
-    usaSubitens: false,
-  });
+  const makeComposicao = (descricao?: string, unidade?: string): OrcamentoComposicao => {
+    const existingCodes = categoria.composicoes.map(c => c.codigo);
+    return {
+      id: `comp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      codigo: generateComposicaoCodigo(categoria.codigo, existingCodes),
+      descricao: descricao || '',
+      unidade: unidade || '',
+      quantidade: null,
+      precoUnitario: null,
+      precoTotal: 0,
+      subitens: [],
+      usaSubitens: false,
+    };
+  };
 
   const recalcCategoria = (comps: OrcamentoComposicao[]) => {
     return comps.reduce((s, c) => s + c.precoTotal, 0);
@@ -60,6 +74,15 @@ export default function CategoriaBlock({ categoria, unidades, onChange, onRemove
   const addComposicao = () => {
     const comps = [...categoria.composicoes, makeComposicao()];
     onChange({ ...categoria, composicoes: comps });
+  };
+
+  const addFromSugestao = () => {
+    if (!selectedInsumo) return;
+    const insumo = sugestoes.find(s => s.descricao === selectedInsumo);
+    if (!insumo) return;
+    const comps = [...categoria.composicoes, makeComposicao(insumo.descricao, insumo.unidade)];
+    onChange({ ...categoria, composicoes: comps });
+    setSelectedInsumo('');
   };
 
   return (
@@ -93,7 +116,7 @@ export default function CategoriaBlock({ categoria, unidades, onChange, onRemove
               </div>
             ) : (
               <div className="space-y-2">
-                <div className="grid grid-cols-[60px_1fr_80px_80px_100px_100px_36px] gap-1 text-[10px] text-muted-foreground font-medium">
+                <div className="grid grid-cols-[80px_1fr_80px_80px_100px_100px_36px] gap-1 text-[10px] text-muted-foreground font-medium">
                   <span>Código</span><span>Descrição</span><span>Un</span><span>Qtd</span><span>P. Unit</span><span>P. Total</span><span />
                 </div>
                 {categoria.composicoes.map((comp, idx) => (
@@ -103,11 +126,41 @@ export default function CategoriaBlock({ categoria, unidades, onChange, onRemove
                     unidades={unidades}
                     onChange={c => updateComposicao(idx, c)}
                     onRemove={() => removeComposicao(idx)}
+                    generateSubitemCodigo={generateSubitemCodigo}
                   />
                 ))}
-                <Button variant="outline" size="sm" className="text-xs h-7" onClick={addComposicao}>
-                  <Plus className="h-3 w-3 mr-1" /> Composição
-                </Button>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <div className="flex items-center gap-1">
+                    <Button variant={addMode === 'sugestao' ? 'default' : 'outline'} size="sm" className="text-[10px] h-6" onClick={() => setAddMode('sugestao')}>Sugerido</Button>
+                    <Button variant={addMode === 'manual' ? 'default' : 'outline'} size="sm" className="text-[10px] h-6" onClick={() => setAddMode('manual')}>Manual</Button>
+                  </div>
+                  {addMode === 'sugestao' && availableSugestoes.length > 0 ? (
+                    <>
+                      <Select value={selectedInsumo} onValueChange={setSelectedInsumo}>
+                        <SelectTrigger className="w-64 h-7 text-xs">
+                          <SelectValue placeholder="Selecione um insumo..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableSugestoes.map(s => (
+                            <SelectItem key={s.descricao} value={s.descricao} className="text-xs">
+                              {s.descricao} <span className="text-muted-foreground ml-1">({s.unidade})</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button variant="outline" size="sm" className="text-xs h-7" onClick={addFromSugestao}>
+                        <Plus className="h-3 w-3 mr-1" /> Adicionar
+                      </Button>
+                    </>
+                  ) : addMode === 'sugestao' && availableSugestoes.length === 0 ? (
+                    <span className="text-[10px] text-muted-foreground">Todas as sugestões já foram adicionadas</span>
+                  ) : null}
+                  {addMode === 'manual' && (
+                    <Button variant="outline" size="sm" className="text-xs h-7" onClick={addComposicao}>
+                      <Plus className="h-3 w-3 mr-1" /> Composição em branco
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
           </>
