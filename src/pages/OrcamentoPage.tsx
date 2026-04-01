@@ -1,151 +1,135 @@
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useObras } from '@/contexts/ObrasContext';
+import { useOrcamento } from '@/contexts/OrcamentoContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { mockOrcamentoItens, mockObras, formatCurrency } from '@/data/mockData';
-import { DollarSign, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
-
-const statusColors: Record<string, string> = {
-  pendente: 'bg-muted text-muted-foreground border-0',
-  em_execucao: 'bg-primary/10 text-primary border-0',
-  concluido: 'bg-success/10 text-success border-0',
-};
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { formatCurrency } from '@/data/mockData';
+import { DollarSign, TrendingUp, TrendingDown, Edit } from 'lucide-react';
+import OrcamentoEditor from '@/components/orcamento/OrcamentoEditor';
 
 export default function OrcamentoPage() {
   const { user } = useAuth();
-  const obra = mockObras[0];
-  const itens = mockOrcamentoItens.filter(i => i.obraId === obra.id);
-  const totalPrevisto = itens.reduce((s, i) => s + i.custoTotalPrevisto, 0);
-  const totalRealizado = itens.reduce((s, i) => s + i.custoRealizado, 0);
-  const diferenca = totalPrevisto - totalRealizado;
-  const percentual = Math.round((totalRealizado / totalPrevisto) * 100);
+  const { obras } = useObras();
+  const { getOrcamento } = useOrcamento();
+  const [selectedObraId, setSelectedObraId] = useState(obras[0]?.id || '');
+  const [editing, setEditing] = useState(false);
 
-  // Group by category
-  const categorias = [...new Set(itens.map(i => i.categoria))];
-  const porCategoria = categorias.map(cat => {
-    const items = itens.filter(i => i.categoria === cat);
-    const prev = items.reduce((s, i) => s + i.custoTotalPrevisto, 0);
-    const real = items.reduce((s, i) => s + i.custoRealizado, 0);
-    return { categoria: cat, previsto: prev, realizado: real, desvio: real - prev };
-  });
+  const obra = obras.find(o => o.id === selectedObraId);
+  const orcamento = selectedObraId ? getOrcamento(selectedObraId) : undefined;
 
+  const totalPrevisto = orcamento?.categorias.reduce((s, c) => s + c.precoTotal, 0) ?? 0;
   const isCliente = user?.role === 'cliente';
+  const isGestor = user?.role === 'gestor';
+
+  if (editing && obra) {
+    return <OrcamentoEditor obraId={obra.id} obraNome={obra.nome} onBack={() => setEditing(false)} />;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Orçamento</h1>
-        <p className="text-muted-foreground text-sm">{obra.nome}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Orçamento</h1>
+          <p className="text-muted-foreground text-sm">Gestão orçamentária por obra</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={selectedObraId} onValueChange={setSelectedObraId}>
+            <SelectTrigger className="w-60">
+              <SelectValue placeholder="Selecione a obra" />
+            </SelectTrigger>
+            <SelectContent>
+              {obras.map(o => (
+                <SelectItem key={o.id} value={o.id}>{o.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {isGestor && (
+            <Button onClick={() => setEditing(true)} className="gap-1">
+              <Edit className="h-4 w-4" /> Editar
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="shadow-card">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground font-medium">Previsto</p>
-            <p className="text-xl font-bold text-foreground">{formatCurrency(totalPrevisto)}</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-card">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground font-medium">Realizado</p>
-            <p className="text-xl font-bold text-foreground">{formatCurrency(totalRealizado)}</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-card">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground font-medium">Saldo</p>
-            <p className={`text-xl font-bold ${diferenca >= 0 ? 'text-success' : 'text-destructive'}`}>{formatCurrency(diferenca)}</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-card">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground font-medium">Consumido</p>
-            <div className="space-y-1">
-              <p className="text-xl font-bold text-foreground">{percentual}%</p>
-              <Progress value={percentual} className="h-1.5" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {!obra && (
+        <div className="text-center py-12 text-muted-foreground">Selecione uma obra para visualizar o orçamento.</div>
+      )}
 
-      {/* By category */}
-      <Card className="shadow-card">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Previsto × Realizado por Etapa</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {porCategoria.map(cat => (
-            <div key={cat.categoria} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-foreground">{cat.categoria}</span>
-                <div className="flex items-center gap-2">
-                  {cat.desvio > 0 && <TrendingUp className="h-3.5 w-3.5 text-destructive" />}
-                  {cat.desvio < 0 && <TrendingDown className="h-3.5 w-3.5 text-success" />}
-                  <span className={`text-xs font-medium ${cat.desvio > 0 ? 'text-destructive' : cat.desvio < 0 ? 'text-success' : 'text-muted-foreground'}`}>
-                    {cat.desvio > 0 ? '+' : ''}{formatCurrency(cat.desvio)}
-                  </span>
+      {obra && (
+        <>
+          {/* Summary */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            <Card className="shadow-card">
+              <CardContent className="p-4">
+                <p className="text-xs text-muted-foreground font-medium">Total Previsto</p>
+                <p className="text-xl font-bold text-foreground">{formatCurrency(totalPrevisto)}</p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-card">
+              <CardContent className="p-4">
+                <p className="text-xs text-muted-foreground font-medium">Categorias</p>
+                <p className="text-xl font-bold text-foreground">{orcamento?.categorias.length ?? 0}</p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-card">
+              <CardContent className="p-4">
+                <p className="text-xs text-muted-foreground font-medium">Progresso da Obra</p>
+                <div className="space-y-1">
+                  <p className="text-xl font-bold text-foreground">{obra.percentualAndamento}%</p>
+                  <Progress value={obra.percentualAndamento} className="h-1.5" />
                 </div>
-              </div>
-              <div className="flex gap-2 text-xs text-muted-foreground">
-                <span>Prev: {formatCurrency(cat.previsto)}</span>
-                <span>·</span>
-                <span>Real: {formatCurrency(cat.realizado)}</span>
-              </div>
-              <div className="relative h-2 bg-muted rounded-full overflow-hidden">
-                <div className="absolute inset-y-0 left-0 bg-primary/30 rounded-full" style={{ width: '100%' }} />
-                <div className={`absolute inset-y-0 left-0 rounded-full ${cat.desvio > 0 ? 'bg-destructive' : 'bg-success'}`} style={{ width: `${Math.min((cat.realizado / cat.previsto) * 100, 100)}%` }} />
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Detailed table (not for client summary) */}
-      {!isCliente && (
-        <Card className="shadow-card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Itens do Orçamento</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left p-2 text-muted-foreground font-medium">Categoria</th>
-                    <th className="text-left p-2 text-muted-foreground font-medium hidden md:table-cell">Descrição</th>
-                    <th className="text-right p-2 text-muted-foreground font-medium">Previsto</th>
-                    <th className="text-right p-2 text-muted-foreground font-medium">Realizado</th>
-                    <th className="text-center p-2 text-muted-foreground font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {itens.map(item => (
-                    <tr key={item.id} className="border-b border-border hover:bg-muted/50 transition-colors">
-                      <td className="p-2 text-foreground font-medium">{item.categoria}</td>
-                      <td className="p-2 text-muted-foreground hidden md:table-cell">{item.descricao}</td>
-                      <td className="p-2 text-right text-foreground">{formatCurrency(item.custoTotalPrevisto)}</td>
-                      <td className="p-2 text-right text-foreground">{formatCurrency(item.custoRealizado)}</td>
-                      <td className="p-2 text-center">
-                        <Badge variant="secondary" className={statusColors[item.status]}>
-                          {item.status === 'em_execucao' ? 'Em Execução' : item.status === 'concluido' ? 'Concluído' : 'Pendente'}
-                        </Badge>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="font-semibold">
-                    <td className="p-2 text-foreground" colSpan={2}>Total</td>
-                    <td className="p-2 text-right text-foreground">{formatCurrency(totalPrevisto)}</td>
-                    <td className="p-2 text-right text-foreground">{formatCurrency(totalRealizado)}</td>
-                    <td></td>
-                  </tr>
-                </tfoot>
-              </table>
+          {/* Categories breakdown */}
+          {orcamento && orcamento.categorias.length > 0 ? (
+            <Card className="shadow-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Categorias do Orçamento</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left p-2 text-muted-foreground font-medium">Código</th>
+                        <th className="text-left p-2 text-muted-foreground font-medium">Categoria</th>
+                        <th className="text-right p-2 text-muted-foreground font-medium">Valor Previsto</th>
+                        <th className="text-right p-2 text-muted-foreground font-medium">Composições</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orcamento.categorias.map(cat => (
+                        <tr key={cat.id} className="border-b border-border hover:bg-muted/50 transition-colors">
+                          <td className="p-2 font-mono text-xs text-muted-foreground">{cat.codigo}</td>
+                          <td className="p-2 text-foreground font-medium">{cat.nome}</td>
+                          <td className="p-2 text-right text-foreground">{formatCurrency(cat.precoTotal)}</td>
+                          <td className="p-2 text-right text-muted-foreground">{cat.usaComposicoes ? cat.composicoes.length : '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="font-semibold">
+                        <td className="p-2" colSpan={2}>Total</td>
+                        <td className="p-2 text-right text-foreground">{formatCurrency(totalPrevisto)}</td>
+                        <td />
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground text-sm">
+              {isGestor ? 'Nenhum orçamento cadastrado. Clique em "Editar" para criar.' : 'Orçamento ainda não cadastrado para esta obra.'}
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </>
       )}
     </div>
   );

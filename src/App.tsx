@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ObrasProvider } from "@/contexts/ObrasContext";
+import { OrcamentoProvider } from "@/contexts/OrcamentoContext";
 import AppLayout from "@/components/AppLayout";
 import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
@@ -39,6 +40,7 @@ const App = () => (
       <Sonner />
       <AuthProvider>
         <ObrasProvider>
+        <OrcamentoProvider>
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LoginRoute />} />
@@ -54,6 +56,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+        </OrcamentoProvider>
         </ObrasProvider>
       </AuthProvider>
     </TooltipProvider>
