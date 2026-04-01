@@ -23,6 +23,12 @@ export interface OrcamentoComposicao {
   precoTotal: number;
   subitens: OrcamentoSubitem[];
   usaSubitens: boolean;
+  dataInicioPrevista?: string;
+  dataFimPrevista?: string;
+  dataInicioReal?: string;
+  dataFimReal?: string;
+  pesoCronograma?: number; // weight % within category for progress
+  concluida?: boolean;
 }
 
 export interface OrcamentoCategoria {
