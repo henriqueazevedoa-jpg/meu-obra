@@ -39,7 +39,7 @@ function GestorDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground font-medium">Obras Ativas</p>
-                <p className="text-2xl font-bold text-foreground">{mockObras.filter(o => o.status === 'em_andamento').length}</p>
+                <p className="text-2xl font-bold text-foreground">{obras.filter(o => o.status === 'em_andamento').length}</p>
               </div>
               <Building2 className="h-8 w-8 text-primary/30" />
             </div>
