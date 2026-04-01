@@ -16,7 +16,8 @@ import {
 } from '@/data/mockData';
 
 function GestorDashboard() {
-  const obra = mockObras[0];
+  const { obras } = useObras();
+  const obra = obras[0];
   const totalPrevisto = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoTotalPrevisto, 0);
   const totalRealizado = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoRealizado, 0);
   const etapasAtrasadas = mockCronograma.filter(e => e.obraId === obra.id && e.status === 'atrasada').length;
