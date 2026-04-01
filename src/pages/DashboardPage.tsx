@@ -271,7 +271,8 @@ function FuncionarioDashboard() {
 }
 
 function ClienteDashboard() {
-  const obra = mockObras[0];
+  const { obras } = useObras();
+  const obra = obras[0];
   const totalPrevisto = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoTotalPrevisto, 0);
   const totalRealizado = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoRealizado, 0);
   const registrosAprovados = mockDiario.filter(d => d.obraId === obra.id && d.status === 'aprovado');
