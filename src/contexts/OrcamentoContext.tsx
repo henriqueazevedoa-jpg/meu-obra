@@ -23,6 +23,12 @@ export interface OrcamentoComposicao {
   precoTotal: number;
   subitens: OrcamentoSubitem[];
   usaSubitens: boolean;
+  dataInicioPrevista?: string;
+  dataFimPrevista?: string;
+  dataInicioReal?: string;
+  dataFimReal?: string;
+  pesoCronograma?: number; // weight % within category for progress
+  concluida?: boolean;
 }
 
 export interface OrcamentoCategoria {
@@ -32,6 +38,14 @@ export interface OrcamentoCategoria {
   precoTotal: number;
   usaComposicoes: boolean;
   composicoes: OrcamentoComposicao[];
+  dataInicioPrevista?: string;
+  dataFimPrevista?: string;
+  dataInicioReal?: string;
+  dataFimReal?: string;
+  statusCronograma?: 'nao_iniciada' | 'em_andamento' | 'concluida' | 'atrasada';
+  percentualCronograma?: number;
+  responsavel?: string;
+  observacoesCronograma?: string;
 }
 
 export interface OrcamentoObra {

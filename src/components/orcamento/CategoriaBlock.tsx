@@ -7,10 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Plus, ChevronDown, ChevronRight } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Trash2, Plus, ChevronDown, ChevronRight, CalendarIcon } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import ComposicaoRow from './ComposicaoRow';
 import { formatCurrency } from '@/data/mockData';
-
+import { cn } from '@/lib/utils';
 interface Props {
   categoria: OrcamentoCategoria;
   unidades: string[];
@@ -102,6 +106,42 @@ export default function CategoriaBlock({ categoria, unidades, onChange, onRemove
 
         {expanded && (
           <>
+            {/* Dates */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div>
+                <label className="text-[10px] text-muted-foreground">Início Previsto</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("h-7 text-[10px] px-2 justify-start font-normal w-full", !categoria.dataInicioPrevista && "text-muted-foreground")}>
+                      <CalendarIcon className="h-3 w-3 mr-1" />
+                      {categoria.dataInicioPrevista ? format(parseISO(categoria.dataInicioPrevista), 'dd/MM/yy') : 'Selecionar'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={categoria.dataInicioPrevista ? parseISO(categoria.dataInicioPrevista) : undefined}
+                      onSelect={d => update('dataInicioPrevista', d ? format(d, 'yyyy-MM-dd') : undefined)} locale={ptBR}
+                      className={cn("p-3 pointer-events-auto")} />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground">Fim Previsto</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("h-7 text-[10px] px-2 justify-start font-normal w-full", !categoria.dataFimPrevista && "text-muted-foreground")}>
+                      <CalendarIcon className="h-3 w-3 mr-1" />
+                      {categoria.dataFimPrevista ? format(parseISO(categoria.dataFimPrevista), 'dd/MM/yy') : 'Selecionar'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={categoria.dataFimPrevista ? parseISO(categoria.dataFimPrevista) : undefined}
+                      onSelect={d => update('dataFimPrevista', d ? format(d, 'yyyy-MM-dd') : undefined)} locale={ptBR}
+                      className={cn("p-3 pointer-events-auto")} />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5">
                 <Switch id={`comp-${categoria.id}`} checked={categoria.usaComposicoes} onCheckedChange={v => update('usaComposicoes', v)} className="scale-75" />
