@@ -13,11 +13,8 @@ interface Props {
 export default function SubitemRow({ subitem, unidades, onChange, onRemove }: Props) {
   const update = (field: string, value: any) => {
     const next = { ...subitem, [field]: value };
-    // Auto-calc
     if (field === 'quantidade' || field === 'precoUnitario') {
-      if (next.quantidade && next.precoUnitario) {
-        next.precoTotal = next.quantidade * next.precoUnitario;
-      }
+      if (next.quantidade && next.precoUnitario) next.precoTotal = next.quantidade * next.precoUnitario;
     }
     if (field === 'precoTotal' && next.quantidade && next.quantidade > 0) {
       next.precoUnitario = next.precoTotal / next.quantidade;
@@ -26,8 +23,8 @@ export default function SubitemRow({ subitem, unidades, onChange, onRemove }: Pr
   };
 
   return (
-    <div className="grid grid-cols-[60px_1fr_80px_80px_100px_100px_36px] gap-1 items-center text-xs pl-8">
-      <Input value={subitem.codigo} onChange={e => update('codigo', e.target.value)} className="h-7 text-xs px-1" placeholder="Cód" />
+    <div className="grid grid-cols-[80px_1fr_80px_80px_100px_100px_36px] gap-1 items-center text-xs pl-8">
+      <div className="text-xs font-mono text-muted-foreground px-1 truncate" title={subitem.codigo}>{subitem.codigo}</div>
       <Input value={subitem.descricao} onChange={e => update('descricao', e.target.value)} className="h-7 text-xs px-1" placeholder="Descrição" />
       <div className="relative">
         <Input value={subitem.unidade} onChange={e => update('unidade', e.target.value)} className="h-7 text-xs px-1" placeholder="Un" list={`un-sub-${subitem.id}`} />

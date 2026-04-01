@@ -13,18 +13,17 @@ interface Props {
   unidades: string[];
   onChange: (updated: OrcamentoComposicao) => void;
   onRemove: () => void;
+  generateSubitemCodigo: (compCode: string, existing: string[]) => string;
 }
 
-export default function ComposicaoRow({ composicao, unidades, onChange, onRemove }: Props) {
+export default function ComposicaoRow({ composicao, unidades, onChange, onRemove, generateSubitemCodigo }: Props) {
   const [expanded, setExpanded] = useState(false);
 
   const update = (field: string, value: any) => {
     const next = { ...composicao, [field]: value };
     if (!next.usaSubitens) {
       if (field === 'quantidade' || field === 'precoUnitario') {
-        if (next.quantidade && next.precoUnitario) {
-          next.precoTotal = next.quantidade * next.precoUnitario;
-        }
+        if (next.quantidade && next.precoUnitario) next.precoTotal = next.quantidade * next.precoUnitario;
       }
       if (field === 'precoTotal' && next.quantidade && next.quantidade > 0) {
         next.precoUnitario = next.precoTotal / next.quantidade;
@@ -33,24 +32,25 @@ export default function ComposicaoRow({ composicao, unidades, onChange, onRemove
     onChange(next);
   };
 
+  const makeSubitem = (): OrcamentoSubitem => {
+    const existingCodes = composicao.subitens.map(s => s.codigo);
+    return {
+      id: `si-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      codigo: generateSubitemCodigo(composicao.codigo, existingCodes),
+      descricao: '',
+      unidade: composicao.unidade || '',
+      quantidade: null,
+      precoUnitario: null,
+      precoTotal: 0,
+    };
+  };
+
   const toggleSubitens = (val: boolean) => {
     const next = { ...composicao, usaSubitens: val };
-    if (val && next.subitens.length === 0) {
-      next.subitens = [makeSubitem()];
-    }
+    if (val && next.subitens.length === 0) next.subitens = [makeSubitem()];
     recalcFromSubitens(next);
     onChange(next);
   };
-
-  const makeSubitem = (): OrcamentoSubitem => ({
-    id: `si-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    codigo: '',
-    descricao: '',
-    unidade: composicao.unidade || '',
-    quantidade: null,
-    precoUnitario: null,
-    precoTotal: 0,
-  });
 
   const recalcFromSubitens = (comp: OrcamentoComposicao) => {
     if (comp.usaSubitens) {
@@ -81,8 +81,8 @@ export default function ComposicaoRow({ composicao, unidades, onChange, onRemove
 
   return (
     <div className="border border-border rounded-md bg-card">
-      <div className="grid grid-cols-[60px_1fr_80px_80px_100px_100px_36px] gap-1 items-center text-xs p-2">
-        <Input value={composicao.codigo} onChange={e => update('codigo', e.target.value)} className="h-7 text-xs px-1" placeholder="Cód" />
+      <div className="grid grid-cols-[80px_1fr_80px_80px_100px_100px_36px] gap-1 items-center text-xs p-2">
+        <div className="text-xs font-mono text-muted-foreground px-1 truncate" title={composicao.codigo}>{composicao.codigo}</div>
         <Input value={composicao.descricao} onChange={e => update('descricao', e.target.value)} className="h-7 text-xs px-1" placeholder="Descrição" />
         <div className="relative">
           <Input value={composicao.unidade} onChange={e => update('unidade', e.target.value)} className="h-7 text-xs px-1" placeholder="Un" list={`un-comp-${composicao.id}`} />
@@ -118,7 +118,7 @@ export default function ComposicaoRow({ composicao, unidades, onChange, onRemove
 
       {hasSubitens && expanded && (
         <div className="px-2 pb-2 space-y-1">
-          <div className="grid grid-cols-[60px_1fr_80px_80px_100px_100px_36px] gap-1 text-[10px] text-muted-foreground font-medium pl-8">
+          <div className="grid grid-cols-[80px_1fr_80px_80px_100px_100px_36px] gap-1 text-[10px] text-muted-foreground font-medium pl-8">
             <span>Código</span><span>Descrição</span><span>Un</span><span>Qtd</span><span>P. Unit</span><span>P. Total</span><span />
           </div>
           {composicao.subitens.map((si, idx) => (
