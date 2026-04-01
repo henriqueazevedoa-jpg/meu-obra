@@ -190,7 +190,8 @@ function GestorDashboard() {
 }
 
 function FuncionarioDashboard() {
-  const obra = mockObras[0];
+  const { obras } = useObras();
+  const obra = obras[0];
   const meusRegistros = mockDiario.filter(d => d.usuarioId === 'u2');
   const etapasAndamento = mockCronograma.filter(e => e.obraId === obra.id && e.status === 'em_andamento');
 
