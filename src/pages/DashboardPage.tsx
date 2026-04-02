@@ -411,8 +411,8 @@ function ClienteDashboard() {
         </Card>
         <Card className="shadow-card">
           <CardContent className="p-4 text-center">
-            <p className="text-xs text-muted-foreground">Realizado</p>
-            <p className="text-base font-bold text-foreground">{formatCurrency(totalRealizado)}</p>
+            <p className="text-xs text-muted-foreground">Andamento</p>
+            <p className="text-base font-bold text-foreground">{obra?.percentualAndamento || 0}%</p>
           </CardContent>
         </Card>
       </div>
