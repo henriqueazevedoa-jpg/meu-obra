@@ -25,7 +25,7 @@ export default function LoginPage() {
     const success = await login(loginEmail, loginPassword);
     setSubmitting(false);
     if (success) {
-      navigate('/dashboard');
+      navigate('/painel');
     } else {
       setError('E-mail ou senha inválidos.');
     }
