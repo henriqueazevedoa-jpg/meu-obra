@@ -37,6 +37,7 @@ export default function DiarioPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // Form state
+  const [dataRegistro, setDataRegistro] = useState<Date>(new Date());
   const [clima, setClima] = useState<DiarioRegistro['clima']>('sol');
   const [trabalhadores, setTrabalhadores] = useState('');
   const [observacoes, setObservacoes] = useState('');
