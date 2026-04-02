@@ -732,6 +732,23 @@ ${toPrint.map(r => {
         </Card>
       </div>
 
+      {/* Selection & Print actions */}
+      {sortedRegistros.length > 0 && (
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={toggleSelectAll}>
+              {selectedIds.size === sortedRegistros.length ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
+              {selectedIds.size > 0 ? `${selectedIds.size} selecionado(s)` : 'Selecionar'}
+            </Button>
+            {selectedIds.size > 0 && (
+              <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => printRegistros(Array.from(selectedIds))}>
+                <Printer className="h-3.5 w-3.5" /> Imprimir Selecionados
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Timeline */}
       {loading ? (
         <div className="text-center py-12 text-muted-foreground text-sm">Carregando registros...</div>
