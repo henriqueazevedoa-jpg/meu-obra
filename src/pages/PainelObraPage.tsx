@@ -59,6 +59,7 @@ function computeStatus(cat: any): string {
 function GestorPainel() {
   const { obras } = useObras();
   const { selectedObraId, setSelectedObraId } = useObraSelection();
+  const navigate = useNavigate();
   const { getOrcamento } = useOrcamento();
   const { getMateriaisByObra } = useEstoque();
   const { getItensByObra: getCustoItensByObra } = useCustoReal();
