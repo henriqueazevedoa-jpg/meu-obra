@@ -307,7 +307,7 @@ function FuncionarioDashboard() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground text-sm">Bem-vindo de volta, José</p>
+        <p className="text-muted-foreground text-sm">Bem-vindo de volta, {user?.name || 'Funcionário'}</p>
       </div>
 
       <Card className="shadow-card">
