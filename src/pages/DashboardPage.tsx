@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useObraSelection } from '@/contexts/ObraSelectionContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useObras } from '@/contexts/ObrasContext';
 import { useOrcamento } from '@/contexts/OrcamentoContext';
 import { useEstoque } from '@/contexts/EstoqueContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -15,10 +16,33 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  mockOrcamentoItens, mockCronograma, mockDiario,
-  mockMateriais, mockMovimentacoes, formatCurrency, formatDate,
+  formatCurrency, formatDate,
   statusEtapaLabels, statusDiarioLabels, climaLabels
 } from '@/data/mockData';
+
+interface DiarioRow {
+  id: string;
+  data: string;
+  clima: string;
+  trabalhadores: number;
+  servicos_executados: string | null;
+  problemas: string | null;
+  observacoes: string | null;
+  status: string;
+  usuario_nome: string;
+  obra_id: string;
+  user_id: string;
+}
+
+function useDiarioRegistros(obraId?: string) {
+  const [registros, setRegistros] = useState<DiarioRow[]>([]);
+  useEffect(() => {
+    if (!obraId) return;
+    supabase.from('diario_registros').select('*').eq('obra_id', obraId).order('data', { ascending: false })
+      .then(({ data }) => { if (data) setRegistros(data as DiarioRow[]); });
+  }, [obraId]);
+  return registros;
+}
 
 function GestorDashboard() {
   const { obras } = useObras();
