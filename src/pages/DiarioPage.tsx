@@ -304,7 +304,18 @@ export default function DiarioPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Diário de Obra</h1>
-          <p className="text-muted-foreground text-sm">{obra.nome}</p>
+          <div className="mt-1">
+            <Select value={obraId} onValueChange={setObraId}>
+              <SelectTrigger className="w-[280px] h-8 text-sm">
+                <SelectValue placeholder="Selecionar obra..." />
+              </SelectTrigger>
+              <SelectContent>
+                {obras.map(o => (
+                  <SelectItem key={o.id} value={o.id}>{o.codigo} - {o.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         {canCreate && (
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
