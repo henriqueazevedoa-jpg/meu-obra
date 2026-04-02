@@ -44,6 +44,10 @@ export function EstoqueProvider({ children }: { children: React.ReactNode }) {
     setMateriais(prev => [...prev, material]);
   }, []);
 
+  const updateMaterial = useCallback((id: string, data: Partial<Material>) => {
+    setMateriais(prev => prev.map(m => m.id === id ? { ...m, ...data } : m));
+  }, []);
+
   return (
     <EstoqueContext.Provider value={{
       materiais, movimentacoes, getMateriaisByObra, getMovimentacoesByObra,
