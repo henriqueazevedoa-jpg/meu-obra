@@ -51,7 +51,7 @@ export function EstoqueProvider({ children }: { children: React.ReactNode }) {
   return (
     <EstoqueContext.Provider value={{
       materiais, movimentacoes, getMateriaisByObra, getMovimentacoesByObra,
-      registrarMovimentacao, addMaterial,
+      registrarMovimentacao, addMaterial, updateMaterial,
     }}>
       {children}
     </EstoqueContext.Provider>
