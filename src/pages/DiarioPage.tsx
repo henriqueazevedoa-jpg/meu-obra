@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrcamento, OrcamentoCategoria, OrcamentoComposicao } from '@/contexts/OrcamentoContext';
 import { useEstoque } from '@/contexts/EstoqueContext';
@@ -11,8 +13,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 import { mockDiario, formatDate, statusDiarioLabels, climaLabels, DiarioRegistro, DiarioServico, DiarioMaterialUsado } from '@/data/mockData';
-import { Plus, Users, CheckCircle2, Clock, XCircle, Trash2, Link2, Package, Pencil } from 'lucide-react';
+import { Plus, Users, CheckCircle2, Clock, XCircle, Trash2, Link2, Package, Pencil, CalendarIcon } from 'lucide-react';
 
 const statusIcons: Record<string, React.ReactNode> = {
   pendente: <Clock className="h-4 w-4 text-warning" />,
@@ -32,6 +37,7 @@ export default function DiarioPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // Form state
+  const [dataRegistro, setDataRegistro] = useState<Date>(new Date());
   const [clima, setClima] = useState<DiarioRegistro['clima']>('sol');
   const [trabalhadores, setTrabalhadores] = useState('');
   const [observacoes, setObservacoes] = useState('');
@@ -108,6 +114,7 @@ export default function DiarioPage() {
   };
 
   const resetForm = () => {
+    setDataRegistro(new Date());
     setClima('sol');
     setTrabalhadores('');
     setObservacoes('');
@@ -119,6 +126,7 @@ export default function DiarioPage() {
 
   const loadRegistroForEdit = (registro: DiarioRegistro) => {
     setEditingId(registro.id);
+    setDataRegistro(parseISO(registro.data));
     setClima(registro.clima);
     setTrabalhadores(String(registro.trabalhadores));
     setObservacoes(registro.observacoes);
@@ -129,7 +137,7 @@ export default function DiarioPage() {
   };
 
   const handleSubmit = () => {
-    const hoje = new Date().toISOString().split('T')[0];
+    const hoje = format(dataRegistro, 'yyyy-MM-dd');
     const descGeral = servicos.map(s => s.descricao).filter(Boolean).join('. ') || 'Sem serviços detalhados';
     const filteredServicos = servicos.filter(s => s.descricao.trim());
     const filteredMateriais = materiaisUsados.filter(m => m.materialId && m.quantidade > 0);
@@ -174,6 +182,7 @@ export default function DiarioPage() {
 
       setRegistros(registros.map(r => r.id === editingId ? {
         ...r,
+        data: hoje,
         clima,
         trabalhadores: parseInt(trabalhadores) || 0,
         servicosExecutados: descGeral,
@@ -328,7 +337,29 @@ export default function DiarioPage() {
               </DialogHeader>
               <div className="space-y-5 pt-2">
                 {/* Basic info */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Data</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !dataRegistro && "text-muted-foreground")}>
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {format(dataRegistro, "dd/MM/yyyy")}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={dataRegistro}
+                          onSelect={(d) => d && setDataRegistro(d)}
+                          disabled={(date) => date > new Date()}
+                          initialFocus
+                          locale={ptBR}
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground">Clima</label>
                     <Select value={clima} onValueChange={v => setClima(v as DiarioRegistro['clima'])}>
@@ -556,7 +587,7 @@ export default function DiarioPage() {
                   }>
                     {statusDiarioLabels[registro.status]}
                   </Badge>
-                  {canCreate && registro.status !== 'aprovado' && (
+                  {(user?.role === 'gestor' || (canCreate && registro.status !== 'aprovado')) && (
                     <Button size="sm" variant="ghost" onClick={() => loadRegistroForEdit(registro)}>
                       <Pencil className="h-3.5 w-3.5 mr-1" /> Editar
                     </Button>
