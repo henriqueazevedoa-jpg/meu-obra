@@ -59,7 +59,7 @@ export default function CategoriaBlock({ categoria, unidades, onChange, onRemove
   const makeComposicao = (descricao?: string, unidade?: string): OrcamentoComposicao => {
     const existingCodes = categoria.composicoes.map(c => c.codigo);
     return {
-      id: `comp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: crypto.randomUUID(),
       codigo: generateComposicaoCodigo(categoria.codigo, existingCodes),
       descricao: descricao || '',
       unidade: unidade || '',
