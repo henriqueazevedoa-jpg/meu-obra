@@ -17,7 +17,7 @@ const gestorLinks = [
 ];
 
 const funcionarioLinks = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/painel', label: 'Painel da Obra', icon: LayoutDashboard },
   { to: '/obras', label: 'Obras', icon: Building2 },
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
   { to: '/diario', label: 'Diário', icon: BookOpen },
