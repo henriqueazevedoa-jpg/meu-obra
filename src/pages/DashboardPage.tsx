@@ -104,15 +104,11 @@ function GestorDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground font-medium">Orçamento Realizado</p>
-                <p className="text-lg font-bold text-foreground">{formatCurrency(totalRealizado)}</p>
-                {totalPrevisto > 0 && (
-                  <p className={`text-[10px] font-medium ${totalRealizado <= totalPrevisto ? 'text-success' : 'text-destructive'}`}>
-                    {Math.round((totalRealizado / totalPrevisto) * 100)}% do planejado
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground font-medium">Andamento Planejado</p>
+                <p className="text-2xl font-bold text-foreground">{andamentoPlanejado}%</p>
+                <Progress value={andamentoPlanejado} className="h-1.5 mt-1 w-24" />
               </div>
-              <DollarSign className="h-8 w-8 text-success/30" />
+              <CalendarCheck className="h-8 w-8 text-primary/30" />
             </div>
           </CardContent>
         </Card>
@@ -120,11 +116,16 @@ function GestorDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground font-medium">Andamento Físico</p>
-                <p className="text-2xl font-bold text-foreground">{progressoFisico}%</p>
-                <Progress value={progressoFisico} className="h-1.5 mt-1 w-24" />
+                <p className="text-xs text-muted-foreground font-medium">Andamento Real</p>
+                <p className="text-2xl font-bold text-foreground">{andamentoReal}%</p>
+                <Progress value={andamentoReal} className="h-1.5 mt-1 w-24" />
+                {andamentoPlanejado > 0 && (
+                  <p className={`text-[10px] font-medium mt-0.5 ${andamentoReal >= andamentoPlanejado ? 'text-success' : 'text-destructive'}`}>
+                    {andamentoReal >= andamentoPlanejado ? 'No prazo' : `${andamentoPlanejado - andamentoReal}% atrasado`}
+                  </p>
+                )}
               </div>
-              <TrendingUp className="h-8 w-8 text-primary/30" />
+              <TrendingUp className="h-8 w-8 text-success/30" />
             </div>
           </CardContent>
         </Card>
