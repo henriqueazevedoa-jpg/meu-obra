@@ -319,6 +319,7 @@ export type Database = {
           created_at: string
           data_inicio: string | null
           data_previsao_termino: string | null
+          descricao: string | null
           endereco: string | null
           id: string
           nome: string
@@ -333,6 +334,7 @@ export type Database = {
           created_at?: string
           data_inicio?: string | null
           data_previsao_termino?: string | null
+          descricao?: string | null
           endereco?: string | null
           id?: string
           nome: string
@@ -347,6 +349,7 @@ export type Database = {
           created_at?: string
           data_inicio?: string | null
           data_previsao_termino?: string | null
+          descricao?: string | null
           endereco?: string | null
           id?: string
           nome?: string
