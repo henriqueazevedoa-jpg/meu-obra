@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      custo_real_itens: {
+        Row: {
+          categoria_id: string
+          created_at: string
+          descricao: string
+          fornecedor: string | null
+          id: string
+          movimentacao_id: string | null
+          nota_fiscal_url: string | null
+          obra_id: string
+          preco_total: number
+          preco_unitario: number | null
+          quantidade: number | null
+          tipo_insumo: string
+          unidade: string | null
+          updated_at: string
+        }
+        Insert: {
+          categoria_id: string
+          created_at?: string
+          descricao?: string
+          fornecedor?: string | null
+          id?: string
+          movimentacao_id?: string | null
+          nota_fiscal_url?: string | null
+          obra_id: string
+          preco_total?: number
+          preco_unitario?: number | null
+          quantidade?: number | null
+          tipo_insumo?: string
+          unidade?: string | null
+          updated_at?: string
+        }
+        Update: {
+          categoria_id?: string
+          created_at?: string
+          descricao?: string
+          fornecedor?: string | null
+          id?: string
+          movimentacao_id?: string | null
+          nota_fiscal_url?: string | null
+          obra_id?: string
+          preco_total?: number
+          preco_unitario?: number | null
+          quantidade?: number | null
+          tipo_insumo?: string
+          unidade?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       diario_materiais: {
         Row: {
           created_at: string
