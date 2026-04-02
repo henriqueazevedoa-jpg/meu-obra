@@ -8,13 +8,12 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 const gestorLinks = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/painel', label: 'Painel da Obra', icon: LayoutDashboard },
   { to: '/obras', label: 'Obras', icon: Building2 },
   { to: '/orcamento', label: 'Orçamento', icon: DollarSign },
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
   { to: '/diario', label: 'Diário', icon: BookOpen },
   { to: '/estoque', label: 'Estoque', icon: Package },
-  { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
 ];
 
 const funcionarioLinks = [
