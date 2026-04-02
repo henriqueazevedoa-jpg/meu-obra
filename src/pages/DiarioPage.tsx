@@ -25,8 +25,9 @@ export default function DiarioPage() {
   const { obras } = useObras();
   const { orcamentos, getOrcamento, saveOrcamento } = useOrcamento();
   const { getMateriaisByObra, registrarMovimentacao } = useEstoque();
-  const obra = obras[0];
-  const [registros, setRegistros] = useState<DiarioRegistro[]>(mockDiario.filter(d => d.obraId === obra.id));
+  const [obraId, setObraId] = useState(obras[0]?.id || '');
+  const obra = obras.find(o => o.id === obraId) || obras[0];
+  const [registros, setRegistros] = useState<DiarioRegistro[]>(mockDiario);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
