@@ -24,7 +24,7 @@ function GestorDashboard() {
   const { obras } = useObras();
   const { getOrcamento } = useOrcamento();
   const { getMateriaisByObra } = useEstoque();
-  const [selectedObraId, setSelectedObraId] = useState(obras[0]?.id || '');
+  const { selectedObraId, setSelectedObraId } = useObraSelection();
   const obra = obras.find(o => o.id === selectedObraId) || obras[0];
 
   const orcamento = getOrcamento(obra.id);
