@@ -16,7 +16,26 @@ Deno.serve(async (req) => {
   const results = [];
 
   for (const u of users) {
-    // Create user
+    // Check if user already exists
+    const { data: existingUsers } = await supabase.auth.admin.listUsers();
+    const existing = existingUsers?.users?.find(eu => eu.email === u.email);
+
+    if (existing) {
+      await supabase.from("user_roles").upsert({ user_id: existing.id, role: u.role }, { onConflict: "user_id" });
+      await supabase.from("profiles").upsert({ user_id: existing.id, nome: u.nome, email: u.email }, { onConflict: "user_id" });
+      const { data: obras } = await supabase.from("obras").select("id");
+      if (obras) {
+        for (const obra of obras) {
+          await supabase.from("obra_memberships").upsert(
+            { user_id: existing.id, obra_id: obra.id, role: u.role },
+            { onConflict: "user_id,obra_id" }
+          );
+        }
+      }
+      results.push({ email: u.email, role: u.role, userId: existing.id, action: "updated" });
+      continue;
+    }
+
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: u.email,
       password: u.password,
@@ -30,25 +49,16 @@ Deno.serve(async (req) => {
     }
 
     const userId = authData.user.id;
+    await supabase.from("user_roles").upsert({ user_id: userId, role: u.role }, { onConflict: "user_id" });
 
-    // Update role (trigger creates as 'gestor' by default)
-    await supabase.from("user_roles").update({ role: u.role }).eq("user_id", userId);
-
-    // Get all obras
     const { data: obras } = await supabase.from("obras").select("id");
-    
-    // Add memberships to all obras
     if (obras) {
       for (const obra of obras) {
-        await supabase.from("obra_memberships").insert({
-          user_id: userId,
-          obra_id: obra.id,
-          role: u.role,
-        });
+        await supabase.from("obra_memberships").insert({ user_id: userId, obra_id: obra.id, role: u.role });
       }
     }
 
-    results.push({ email: u.email, role: u.role, userId, success: true });
+    results.push({ email: u.email, role: u.role, userId, action: "created" });
   }
 
   return new Response(JSON.stringify({ results }), {
