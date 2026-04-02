@@ -114,6 +114,7 @@ export default function DiarioPage() {
   };
 
   const resetForm = () => {
+    setDataRegistro(new Date());
     setClima('sol');
     setTrabalhadores('');
     setObservacoes('');
