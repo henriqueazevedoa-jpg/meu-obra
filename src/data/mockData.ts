@@ -122,12 +122,12 @@ export const mockObras: Obra[] = [
   {
     id: 'ob1',
     nome: 'Residencial Vila Nova',
-    codigo: 'OBR-2024-001',
+    codigo: 'OBR-2025-001',
     cliente: 'Maria Oliveira',
     endereco: 'Rua das Palmeiras, 450 - Vila Nova, São Paulo/SP',
     status: 'em_andamento',
-    dataInicio: '2024-03-15',
-    dataPrevisaoTermino: '2025-02-28',
+    dataInicio: '2025-06-02',
+    dataPrevisaoTermino: '2026-09-30',
     responsavel: 'Carlos Mendes',
     percentualAndamento: 45,
     descricao: 'Construção de residência unifamiliar com 3 pavimentos, área total de 280m². Projeto inclui piscina e área gourmet.',
@@ -136,12 +136,12 @@ export const mockObras: Obra[] = [
   {
     id: 'ob2',
     nome: 'Edifício Comercial Centro',
-    codigo: 'OBR-2024-002',
+    codigo: 'OBR-2026-002',
     cliente: 'Pedro Santos',
     endereco: 'Av. Paulista, 1200 - Bela Vista, São Paulo/SP',
     status: 'planejamento',
-    dataInicio: '2025-01-10',
-    dataPrevisaoTermino: '2026-06-30',
+    dataInicio: '2026-06-01',
+    dataPrevisaoTermino: '2027-12-31',
     responsavel: 'Carlos Mendes',
     percentualAndamento: 0,
     descricao: 'Construção de edifício comercial de 6 pavimentos com 24 salas, 2 subsolos de garagem e área comum com auditório. Área total de 3.200m².',
@@ -150,12 +150,12 @@ export const mockObras: Obra[] = [
   {
     id: 'ob3',
     nome: 'Reforma Clínica Saúde Total',
-    codigo: 'OBR-2023-003',
+    codigo: 'OBR-2025-003',
     cliente: 'Dr. André Martins',
     endereco: 'Rua Augusta, 890 - Consolação, São Paulo/SP',
     status: 'concluida',
-    dataInicio: '2023-06-01',
-    dataPrevisaoTermino: '2023-12-20',
+    dataInicio: '2025-01-06',
+    dataPrevisaoTermino: '2025-07-31',
     responsavel: 'Ricardo Ferreira',
     percentualAndamento: 100,
     descricao: 'Reforma completa de clínica médica com 8 consultórios, recepção, sala de espera e área administrativa. Área de 420m².',
@@ -170,29 +170,32 @@ export const mockCronograma: CronogramaEtapa[] = [];
 
 // ── Mock Diário de Obra ──
 export const mockDiario: DiarioRegistro[] = [
-  // Obra 1 – registros recentes
-  { id: 'd1', obraId: 'ob1', data: '2024-08-14', usuario: 'José Silva', usuarioId: 'u2', clima: 'sol', trabalhadores: 9, servicosExecutados: 'Concretagem da laje do 2º pavimento. Cura com manta úmida iniciada.', servicos: [{ id: 'ds1', descricao: 'Concretagem da laje do 2º pavimento', categoriaId: undefined, composicaoId: undefined }, { id: 'ds2', descricao: 'Cura com manta úmida' }], materiaisUtilizados: [{ id: 'dmu1', materialId: 'm1', materialNome: 'Cimento CP-II 50kg', unidade: 'saco', quantidade: 18 }, { id: 'dmu2', materialId: 'm3', materialNome: 'Brita 1', unidade: 'm³', quantidade: 4 }], observacoes: 'Concreto usinado fck 30MPa. Bomba lança operou normalmente.', problemas: '', fotos: [], status: 'aprovado' },
-  { id: 'd2', obraId: 'ob1', data: '2024-08-13', usuario: 'José Silva', usuarioId: 'u2', clima: 'chuva', trabalhadores: 4, servicosExecutados: 'Serviços internos - passagem de tubulação hidráulica no térreo. Instalação de caixas elétricas 4x2.', servicos: [{ id: 'ds3', descricao: 'Passagem de tubulação hidráulica no térreo' }, { id: 'ds4', descricao: 'Instalação de caixas elétricas 4x2' }], materiaisUtilizados: [{ id: 'dmu3', materialId: 'm6', materialNome: 'Tubo PVC 100mm esgoto', unidade: 'barra', quantidade: 3 }], observacoes: 'Chuva forte pela manhã impediu trabalho externo.', problemas: 'Chuva forte interrompeu serviços externos por 3 horas', fotos: [], status: 'pendente' },
-  { id: 'd3', obraId: 'ob1', data: '2024-08-12', usuario: 'José Silva', usuarioId: 'u2', clima: 'sol', trabalhadores: 8, servicosExecutados: 'Montagem de formas para laje do 2º pavimento. Armação de ferragem da laje.', servicos: [{ id: 'ds5', descricao: 'Montagem de formas para laje do 2º pavimento' }, { id: 'ds6', descricao: 'Armação de ferragem da laje' }], materiaisUtilizados: [], observacoes: 'Entrega de 80 barras de aço CA-50 12,5mm.', problemas: '', fotos: [], status: 'aprovado' },
-  { id: 'd4', obraId: 'ob1', data: '2024-08-11', usuario: 'José Silva', usuarioId: 'u2', clima: 'nublado', trabalhadores: 6, servicosExecutados: 'Armação dos pilares do 2º pavimento. Alvenaria do térreo - parede dos quartos.', servicos: [{ id: 'ds7', descricao: 'Armação dos pilares do 2º pavimento' }, { id: 'ds8', descricao: 'Alvenaria do térreo - parede dos quartos' }], materiaisUtilizados: [{ id: 'dmu4', materialId: 'm4', materialNome: 'Aço CA-50 10mm', unidade: 'barra', quantidade: 40 }, { id: 'dmu5', materialId: 'm5', materialNome: 'Tijolo cerâmico 9x19x19', unidade: 'un', quantidade: 400 }], observacoes: 'Aço CA-50 10mm chegou com 1 dia de atraso.', problemas: 'Atraso na entrega do aço pelo fornecedor', fotos: [], status: 'aprovado' },
-  { id: 'd5', obraId: 'ob1', data: '2024-08-10', usuario: 'José Silva', usuarioId: 'u2', clima: 'sol', trabalhadores: 7, servicosExecutados: 'Desforma das vigas do 1º pavimento. Início da montagem de formas dos pilares do 2º pav.', servicos: [{ id: 'ds9', descricao: 'Desforma das vigas do 1º pavimento' }, { id: 'ds10', descricao: 'Montagem de formas dos pilares do 2º pav' }], materiaisUtilizados: [], observacoes: 'Vigas apresentaram boa qualidade. Sem fissuras aparentes.', problemas: '', fotos: [], status: 'aprovado' },
+  // Obra 1 – registros recentes (março/abril 2026)
+  { id: 'd1', obraId: 'ob1', data: '2026-04-01', usuario: 'José Silva', usuarioId: 'u2', clima: 'sol', trabalhadores: 8, servicosExecutados: 'Chapisco interno nas paredes do 1º pavimento. Passagem de eletrodutos no 2º pavimento.', servicos: [{ id: 'ds1', descricao: 'Chapisco interno - paredes 1º pavimento', categoriaId: 'ob1-cat8', percentualAdicionado: 5 }, { id: 'ds2', descricao: 'Passagem de eletrodutos no 2º pavimento', categoriaId: 'ob1-cat6' }], materiaisUtilizados: [{ id: 'dmu1', materialId: 'm1', materialNome: 'Cimento CP-II 50kg', unidade: 'saco', quantidade: 12 }], observacoes: 'Revestimentos avançando conforme planejado.', problemas: '', fotos: [], status: 'aprovado' },
+  { id: 'd2', obraId: 'ob1', data: '2026-03-31', usuario: 'José Silva', usuarioId: 'u2', clima: 'nublado', trabalhadores: 7, servicosExecutados: 'Instalação de tubulação de água fria nos banheiros do 2º pav. Alvenaria de arremate na cobertura.', servicos: [{ id: 'ds3', descricao: 'Tubulação de água fria - banheiros 2º pav', categoriaId: 'ob1-cat7', percentualAdicionado: 3 }, { id: 'ds4', descricao: 'Alvenaria de arremate na cobertura' }], materiaisUtilizados: [{ id: 'dmu3', materialId: 'm6', materialNome: 'Tubo PVC 100mm esgoto', unidade: 'barra', quantidade: 4 }], observacoes: 'Tempo nublado, sem interrupções.', problemas: '', fotos: [], status: 'aprovado' },
+  { id: 'd3', obraId: 'ob1', data: '2026-03-28', usuario: 'José Silva', usuarioId: 'u2', clima: 'chuva', trabalhadores: 4, servicosExecutados: 'Serviços internos - passagem de fiação elétrica no térreo e 1º pavimento.', servicos: [{ id: 'ds5', descricao: 'Passagem de fiação elétrica - térreo e 1º pav', categoriaId: 'ob1-cat6', percentualAdicionado: 5 }], materiaisUtilizados: [{ id: 'dmu4', materialId: 'm8', materialNome: 'Fio 2,5mm² azul', unidade: 'rolo', quantidade: 2 }], observacoes: 'Chuva forte pela manhã impediu trabalho externo.', problemas: 'Chuva forte interrompeu serviços externos por 4 horas', fotos: [], status: 'pendente' },
+  { id: 'd4', obraId: 'ob1', data: '2026-03-27', usuario: 'José Silva', usuarioId: 'u2', clima: 'sol', trabalhadores: 9, servicosExecutados: 'Conclusão da instalação de telhas. Início do chapisco externo.', servicos: [{ id: 'ds7', descricao: 'Finalização da instalação de telhas', categoriaId: 'ob1-cat5', composicaoId: 'ob1-c5-2', percentualAdicionado: 10 }, { id: 'ds8', descricao: 'Início do chapisco externo - fachada lateral', categoriaId: 'ob1-cat8', percentualAdicionado: 3 }], materiaisUtilizados: [], observacoes: 'Boa produtividade. Telhas finalizadas.', problemas: '', fotos: [], status: 'aprovado' },
+  { id: 'd5', obraId: 'ob1', data: '2026-03-26', usuario: 'José Silva', usuarioId: 'u2', clima: 'sol', trabalhadores: 8, servicosExecutados: 'Instalação de calhas e rufos na cobertura. Emboço do hall de entrada.', servicos: [{ id: 'ds9', descricao: 'Instalação de calhas e rufos', categoriaId: 'ob1-cat5', composicaoId: 'ob1-c5-3', percentualAdicionado: 15 }, { id: 'ds10', descricao: 'Emboço do hall de entrada', categoriaId: 'ob1-cat8', percentualAdicionado: 2 }], materiaisUtilizados: [], observacoes: 'Calhas e rufos em 50%. Sem imprevistos.', problemas: '', fotos: [], status: 'aprovado' },
+
+  // Obra 1 – registro rejeitado para mostrar todos os status
+  { id: 'd8', obraId: 'ob1', data: '2026-03-20', usuario: 'José Silva', usuarioId: 'u2', clima: 'sol', trabalhadores: 6, servicosExecutados: 'Serviços diversos.', servicos: [{ id: 'ds16', descricao: 'Serviços gerais no canteiro' }], materiaisUtilizados: [], observacoes: 'Registro incompleto.', problemas: '', fotos: [], status: 'rejeitado' },
+
   // Obra 3 – registros finais da reforma concluída
-  { id: 'd6', obraId: 'ob3', data: '2023-12-18', usuario: 'José Silva', usuarioId: 'u2', clima: 'sol', trabalhadores: 5, servicosExecutados: 'Limpeza final de toda a clínica. Instalação de placas de sinalização. Vistoria final.', servicos: [{ id: 'ds11', descricao: 'Limpeza final de toda a clínica' }, { id: 'ds12', descricao: 'Instalação de placas de sinalização' }, { id: 'ds13', descricao: 'Vistoria final' }], materiaisUtilizados: [], observacoes: 'Obra entregue ao cliente conforme projeto. Todas as pendências resolvidas.', problemas: '', fotos: [], status: 'aprovado' },
-  { id: 'd7', obraId: 'ob3', data: '2023-12-17', usuario: 'José Silva', usuarioId: 'u2', clima: 'nublado', trabalhadores: 6, servicosExecutados: 'Pintura de retoques finais. Instalação de louças e metais dos banheiros restantes.', servicos: [{ id: 'ds14', descricao: 'Pintura de retoques finais' }, { id: 'ds15', descricao: 'Instalação de louças e metais dos banheiros' }], materiaisUtilizados: [{ id: 'dmu6', materialId: 'm9', materialNome: 'Tinta acrílica branca 18L', unidade: 'lata', quantidade: 2 }], observacoes: 'Últimos ajustes antes da entrega.', problemas: '', fotos: [], status: 'aprovado' },
+  { id: 'd6', obraId: 'ob3', data: '2025-07-28', usuario: 'José Silva', usuarioId: 'u2', clima: 'sol', trabalhadores: 5, servicosExecutados: 'Limpeza final de toda a clínica. Instalação de placas de sinalização. Vistoria final.', servicos: [{ id: 'ds11', descricao: 'Limpeza final de toda a clínica' }, { id: 'ds12', descricao: 'Instalação de placas de sinalização' }, { id: 'ds13', descricao: 'Vistoria final' }], materiaisUtilizados: [], observacoes: 'Obra entregue ao cliente conforme projeto. Todas as pendências resolvidas.', problemas: '', fotos: [], status: 'aprovado' },
+  { id: 'd7', obraId: 'ob3', data: '2025-07-25', usuario: 'José Silva', usuarioId: 'u2', clima: 'nublado', trabalhadores: 6, servicosExecutados: 'Pintura de retoques finais. Instalação de louças e metais dos banheiros restantes.', servicos: [{ id: 'ds14', descricao: 'Pintura de retoques finais' }, { id: 'ds15', descricao: 'Instalação de louças e metais dos banheiros' }], materiaisUtilizados: [{ id: 'dmu6', materialId: 'm9', materialNome: 'Tinta acrílica branca 18L', unidade: 'lata', quantidade: 2 }], observacoes: 'Últimos ajustes antes da entrega.', problemas: '', fotos: [], status: 'aprovado' },
 ];
 
 // ── Mock Materiais ──
 export const mockMateriais: Material[] = [
   // Obra 1
-  { id: 'm1', obraId: 'ob1', nome: 'Cimento CP-II 50kg', categoria: 'Cimento', unidade: 'saco', estoqueAtual: 45, estoqueMinimo: 20, localizacao: 'Almoxarifado', observacoes: '' },
-  { id: 'm2', obraId: 'ob1', nome: 'Areia média', categoria: 'Agregados', unidade: 'm³', estoqueAtual: 8, estoqueMinimo: 5, localizacao: 'Pátio', observacoes: '' },
-  { id: 'm3', obraId: 'ob1', nome: 'Brita 1', categoria: 'Agregados', unidade: 'm³', estoqueAtual: 3, estoqueMinimo: 5, localizacao: 'Pátio', observacoes: 'Estoque baixo - solicitar reposição' },
-  { id: 'm4', obraId: 'ob1', nome: 'Aço CA-50 10mm', categoria: 'Aço', unidade: 'barra', estoqueAtual: 120, estoqueMinimo: 50, localizacao: 'Almoxarifado', observacoes: '' },
-  { id: 'm5', obraId: 'ob1', nome: 'Tijolo cerâmico 9x19x19', categoria: 'Alvenaria', unidade: 'un', estoqueAtual: 2500, estoqueMinimo: 1000, localizacao: 'Pátio', observacoes: '' },
-  { id: 'm6', obraId: 'ob1', nome: 'Tubo PVC 100mm esgoto', categoria: 'Hidráulica', unidade: 'barra', estoqueAtual: 8, estoqueMinimo: 10, localizacao: 'Almoxarifado', observacoes: 'Estoque baixo' },
-  { id: 'm7', obraId: 'ob1', nome: 'Eletroduto 3/4"', categoria: 'Elétrica', unidade: 'barra', estoqueAtual: 35, estoqueMinimo: 15, localizacao: 'Almoxarifado', observacoes: '' },
-  { id: 'm8', obraId: 'ob1', nome: 'Fio 2,5mm² azul', categoria: 'Elétrica', unidade: 'rolo', estoqueAtual: 4, estoqueMinimo: 3, localizacao: 'Almoxarifado', observacoes: '' },
-  // Obra 2 – ainda sem materiais (planejamento)
+  { id: 'm1', obraId: 'ob1', nome: 'Cimento CP-II 50kg', categoria: 'Cimento', unidade: 'saco', estoqueAtual: 38, estoqueMinimo: 20, localizacao: 'Almoxarifado', observacoes: '' },
+  { id: 'm2', obraId: 'ob1', nome: 'Areia média', categoria: 'Agregados', unidade: 'm³', estoqueAtual: 6, estoqueMinimo: 5, localizacao: 'Pátio', observacoes: '' },
+  { id: 'm3', obraId: 'ob1', nome: 'Brita 1', categoria: 'Agregados', unidade: 'm³', estoqueAtual: 2, estoqueMinimo: 5, localizacao: 'Pátio', observacoes: 'Estoque baixo - solicitar reposição' },
+  { id: 'm4', obraId: 'ob1', nome: 'Aço CA-50 10mm', categoria: 'Aço', unidade: 'barra', estoqueAtual: 25, estoqueMinimo: 30, localizacao: 'Almoxarifado', observacoes: 'Estoque baixo' },
+  { id: 'm5', obraId: 'ob1', nome: 'Tijolo cerâmico 9x19x19', categoria: 'Alvenaria', unidade: 'un', estoqueAtual: 800, estoqueMinimo: 500, localizacao: 'Pátio', observacoes: '' },
+  { id: 'm6', obraId: 'ob1', nome: 'Tubo PVC 100mm esgoto', categoria: 'Hidráulica', unidade: 'barra', estoqueAtual: 4, estoqueMinimo: 10, localizacao: 'Almoxarifado', observacoes: 'Estoque baixo' },
+  { id: 'm7', obraId: 'ob1', nome: 'Eletroduto 3/4"', categoria: 'Elétrica', unidade: 'barra', estoqueAtual: 18, estoqueMinimo: 15, localizacao: 'Almoxarifado', observacoes: '' },
+  { id: 'm8', obraId: 'ob1', nome: 'Fio 2,5mm² azul', categoria: 'Elétrica', unidade: 'rolo', estoqueAtual: 3, estoqueMinimo: 3, localizacao: 'Almoxarifado', observacoes: '' },
   // Obra 3 – materiais restantes pós-obra
   { id: 'm9', obraId: 'ob3', nome: 'Tinta acrílica branca 18L', categoria: 'Pintura', unidade: 'lata', estoqueAtual: 2, estoqueMinimo: 0, localizacao: 'Depósito', observacoes: 'Sobra da obra' },
   { id: 'm10', obraId: 'ob3', nome: 'Massa corrida PVA 25kg', categoria: 'Pintura', unidade: 'lata', estoqueAtual: 1, estoqueMinimo: 0, localizacao: 'Depósito', observacoes: 'Sobra da obra' },
@@ -200,13 +203,13 @@ export const mockMateriais: Material[] = [
 
 // ── Mock Movimentações ──
 export const mockMovimentacoes: MovimentacaoEstoque[] = [
-  { id: 'mv1', obraId: 'ob1', materialId: 'm1', materialNome: 'Cimento CP-II 50kg', tipo: 'entrada', data: '2024-08-12', quantidade: 30, origemDestino: 'Depósito Central', responsavel: 'José Silva', observacoes: 'NF 4523' },
-  { id: 'mv2', obraId: 'ob1', materialId: 'm4', materialNome: 'Aço CA-50 10mm', tipo: 'entrada', data: '2024-08-11', quantidade: 80, origemDestino: 'Gerdau Distribuidora', responsavel: 'José Silva', observacoes: 'Entrega com 1 dia de atraso. NF 7891' },
-  { id: 'mv3', obraId: 'ob1', materialId: 'm1', materialNome: 'Cimento CP-II 50kg', tipo: 'saida', data: '2024-08-14', quantidade: 18, origemDestino: 'Concretagem laje 2º pav', responsavel: 'José Silva', observacoes: '' },
-  { id: 'mv4', obraId: 'ob1', materialId: 'm5', materialNome: 'Tijolo cerâmico 9x19x19', tipo: 'saida', data: '2024-08-11', quantidade: 400, origemDestino: 'Alvenaria térreo', responsavel: 'José Silva', observacoes: '' },
-  { id: 'mv5', obraId: 'ob1', materialId: 'm3', materialNome: 'Brita 1', tipo: 'saida', data: '2024-08-14', quantidade: 4, origemDestino: 'Concretagem laje 2º pav', responsavel: 'José Silva', observacoes: '' },
-  { id: 'mv6', obraId: 'ob3', materialId: 'm9', materialNome: 'Tinta acrílica branca 18L', tipo: 'entrada', data: '2023-11-20', quantidade: 8, origemDestino: 'Tintas MC', responsavel: 'Ricardo Ferreira', observacoes: 'NF 2201' },
-  { id: 'mv7', obraId: 'ob3', materialId: 'm9', materialNome: 'Tinta acrílica branca 18L', tipo: 'saida', data: '2023-12-15', quantidade: 6, origemDestino: 'Pintura geral da clínica', responsavel: 'Ricardo Ferreira', observacoes: '' },
+  { id: 'mv1', obraId: 'ob1', materialId: 'm1', materialNome: 'Cimento CP-II 50kg', tipo: 'entrada', data: '2026-03-25', quantidade: 50, origemDestino: 'Depósito Central', responsavel: 'José Silva', observacoes: 'NF 8901' },
+  { id: 'mv2', obraId: 'ob1', materialId: 'm1', materialNome: 'Cimento CP-II 50kg', tipo: 'saida', data: '2026-04-01', quantidade: 12, origemDestino: 'Chapisco interno 1º pav', responsavel: 'José Silva', observacoes: '' },
+  { id: 'mv3', obraId: 'ob1', materialId: 'm6', materialNome: 'Tubo PVC 100mm esgoto', tipo: 'saida', data: '2026-03-31', quantidade: 4, origemDestino: 'Hidráulica banheiros 2º pav', responsavel: 'José Silva', observacoes: '' },
+  { id: 'mv4', obraId: 'ob1', materialId: 'm8', materialNome: 'Fio 2,5mm² azul', tipo: 'saida', data: '2026-03-28', quantidade: 2, origemDestino: 'Fiação elétrica térreo', responsavel: 'José Silva', observacoes: '' },
+  { id: 'mv5', obraId: 'ob1', materialId: 'm4', materialNome: 'Aço CA-50 10mm', tipo: 'entrada', data: '2026-03-10', quantidade: 60, origemDestino: 'Gerdau Distribuidora', responsavel: 'José Silva', observacoes: 'NF 7891' },
+  { id: 'mv6', obraId: 'ob3', materialId: 'm9', materialNome: 'Tinta acrílica branca 18L', tipo: 'entrada', data: '2025-06-15', quantidade: 8, origemDestino: 'Tintas MC', responsavel: 'Ricardo Ferreira', observacoes: 'NF 2201' },
+  { id: 'mv7', obraId: 'ob3', materialId: 'm9', materialNome: 'Tinta acrílica branca 18L', tipo: 'saida', data: '2025-07-20', quantidade: 6, origemDestino: 'Pintura geral da clínica', responsavel: 'Ricardo Ferreira', observacoes: '' },
 ];
 
 // ── Helpers ──
