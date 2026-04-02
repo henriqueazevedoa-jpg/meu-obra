@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { User, Mail, Building2, LogOut } from 'lucide-react';
-import { mockObras } from '@/data/mockData';
+import { useObras } from '@/contexts/ObrasContext';
 import { useNavigate } from 'react-router-dom';
 
 const roleLabels = { gestor: 'Gestor da Obra', funcionario: 'Funcionário / Equipe de Campo', cliente: 'Dono da Obra / Cliente' };
