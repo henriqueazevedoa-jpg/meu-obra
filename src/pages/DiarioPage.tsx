@@ -311,7 +311,7 @@ export default function DiarioPage() {
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Novo Registro do Diário</DialogTitle>
+                <DialogTitle>{editingId ? 'Editar Registro do Diário' : 'Novo Registro do Diário'}</DialogTitle>
               </DialogHeader>
               <div className="space-y-5 pt-2">
                 {/* Basic info */}
