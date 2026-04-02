@@ -295,6 +295,14 @@ function FuncionarioDashboard() {
   const categorias = orcamento?.categorias || [];
   const etapasAndamento = categorias.filter(c => c.statusCronograma === 'em_andamento');
 
+  if (!obra) {
+    return (
+      <div className="flex items-center justify-center py-20 text-muted-foreground text-sm">
+        Nenhuma obra disponível.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
