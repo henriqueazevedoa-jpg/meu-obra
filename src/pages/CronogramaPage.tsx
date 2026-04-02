@@ -308,6 +308,18 @@ export default function CronogramaPage() {
             </Card>
           </div>
 
+          {/* Expand/Collapse all */}
+          {viewMode === 'list' && categorias.some(c => c.usaComposicoes && c.composicoes.length > 0) && (
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => setExpandedCats(new Set(categorias.filter(c => c.usaComposicoes && c.composicoes.length > 0).map(c => c.id)))}>
+                <ChevronDown className="h-3 w-3 mr-1" /> Abrir Todas
+              </Button>
+              <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => setExpandedCats(new Set())}>
+                <ChevronRight className="h-3 w-3 mr-1" /> Fechar Todas
+              </Button>
+            </div>
+          )}
+
           {/* Add etapa */}
           {isGestor && (
             <Card className="shadow-card">
