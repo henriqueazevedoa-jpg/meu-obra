@@ -1,26 +1,74 @@
 
+# Plano de Evolução para SaaS Multiempresa
 
-## Plano: Adicionar visualização Gantt na aba Cronograma da página de detalhe da obra
+## Fase 1 — Modelagem de Dados (Migração SQL)
 
-### O que será feito
-Na página de resumo da obra (`ObraDetalhePage.tsx`), dentro da aba "Cronograma", adicionar um toggle (Lista / Gantt) para alternar entre a visualização atual em lista e um gráfico de Gantt embutido.
+Criar as seguintes tabelas novas no banco:
 
-### Alterações
+### `plans` — Planos do sistema
+- `id`, `slug` (start/pro/enterprise), `nome_comercial`, `descricao`, `limite_obras`, `limite_gestores`, `limite_funcionarios`, `limite_clientes`, `ilimitado` (boolean), `ativo`, `created_at`, `updated_at`
+- Seed com os 3 planos: Start, Pro, Enterprise
 
-**Arquivo: `src/pages/ObraDetalhePage.tsx`**
+### `companies` — Empresas
+- `id`, `nome`, `cnpj`, `email`, `telefone`, `plan_id`, `status` (ativo/inativo/suspenso/teste), `created_at`, `updated_at`
 
-1. Adicionar estado `cronogramaView` (`'lista' | 'gantt'`) com `useState`
-2. Importar `ToggleGroup`/`ToggleGroupItem` de `@/components/ui/toggle-group`, ícones `List` e `BarChart3` do Lucide, e utilitários de data (`parseISO`, `differenceInDays`, `format`, `isBefore`) do `date-fns` com locale `ptBR`
-3. Importar `cn` de `@/lib/utils`
-4. Na `TabsContent` de cronograma, antes da listagem, inserir o toggle de visualização
-5. Renderizar condicionalmente: se `lista`, manter o código atual; se `gantt`, renderizar um mini Gantt inline (reutilizando a mesma lógica já existente em `CronogramaPage.tsx` — barras previsto/real com marcadores de mês)
+### `subscriptions` — Assinaturas
+- `id`, `company_id`, `plan_id`, `status` (trial/active/overdue/canceled/suspended), `ciclo` (mensal/anual), `data_inicio`, `data_vencimento`, `valor_base`, `moeda`, `gateway_id`, `trial_start`, `trial_end`, `observacoes`, `created_at`, `updated_at`
 
-O Gantt será implementado diretamente no componente (sem extrair para arquivo separado) dado que é uma versão simplificada read-only. Usa a mesma lógica de cálculo de barras e status da `CronogramaPage`.
+### `subscription_extras` — Extras futuros
+- `id`, `subscription_id`, `tipo` (usuario_extra/obra_extra/modulo_premium), `descricao`, `quantidade`, `valor_unitario`, `created_at`
 
-### Detalhes técnicos
-- O `computeStatus` será definido localmente (mesmo cálculo simples: verifica datas reais vs previstas)
-- Barras: previsto (azul claro, topo) e real (verde/vermelho/azul, abaixo)
-- Marcadores de mês no cabeçalho
-- Legenda com cores ao final
-- Responsivo: nomes das categorias com `w-[180px]` truncado, área do gráfico com scroll horizontal
+### Alterações em tabelas existentes:
+- `profiles` → adicionar `company_id`, `status` (ativo/inativo)
+- `obras` → adicionar `company_id`
+- `user_roles` → adicionar `company_id`
+- Adicionar role `admin` ao enum `app_role`
 
+### RLS — Row Level Security
+- Todas as tabelas filtradas por `company_id` do usuário autenticado
+- Função `get_user_company_id()` SECURITY DEFINER para consultas RLS
+- Função `is_platform_admin()` para admin global
+- Admin global pode ver/editar tudo
+
+## Fase 2 — Lógica de Limites (Backend)
+
+- Criar função SQL `check_plan_limit(company_id, resource_type)` que retorna se o limite foi atingido
+- Edge function `check-limits` para validação antes de criar obra/usuário
+- Ou validação client-side consultando contagens + plano
+
+## Fase 3 — Código Frontend
+
+### Contexto `CompanyContext`
+- Carregar empresa do usuário logado
+- Expor plano atual, limites e contagens
+- Hook `usePlanLimits()` para checar limites antes de ações
+
+### Onboarding
+- Após signup, fluxo de criar/vincular empresa
+- Escolha de plano
+- Criação do primeiro gestor
+
+### Controle de acesso
+- Validar limites ao criar obra, convidar usuário
+- Mensagens amigáveis de limite atingido
+- Sugestão de upgrade
+
+### Área Admin Global
+- Página `/admin` protegida por role `admin`
+- Listar empresas, planos, assinaturas
+- Alterar plano, suspender empresa
+- Ver uso atual (obras, usuários por role)
+
+## Fase 4 — Migração de Dados Existentes
+- Criar empresa padrão para dados existentes
+- Vincular obras e usuários existentes à empresa
+- Seed de dados de teste com a nova estrutura
+
+## Ordem de execução
+1. Migração SQL (tabelas + RLS + seeds)
+2. Atualizar contextos e hooks
+3. Onboarding e fluxo de empresa
+4. Controle de limites no frontend
+5. Área admin global
+6. Migração dos dados existentes
+7. Atualizar seed-users edge function
