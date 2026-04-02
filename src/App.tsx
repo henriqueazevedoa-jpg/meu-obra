@@ -17,7 +17,7 @@ import OrcamentoPage from "@/pages/OrcamentoPage";
 import CronogramaPage from "@/pages/CronogramaPage";
 import DiarioPage from "@/pages/DiarioPage";
 import EstoquePage from "@/pages/EstoquePage";
-import RelatoriosPage from "@/pages/RelatoriosPage";
+import PainelObraPage from "@/pages/PainelObraPage";
 import PerfilPage from "@/pages/PerfilPage";
 import NotFound from "@/pages/NotFound";
 
