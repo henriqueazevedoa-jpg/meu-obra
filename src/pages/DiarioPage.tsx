@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { mockDiario, formatDate, statusDiarioLabels, climaLabels, DiarioRegistro, DiarioServico, DiarioMaterialUsado } from '@/data/mockData';
-import { Plus, Users, CheckCircle2, Clock, XCircle, Trash2, Link2, Package } from 'lucide-react';
+import { Plus, Users, CheckCircle2, Clock, XCircle, Trash2, Link2, Package, Pencil } from 'lucide-react';
 
 const statusIcons: Record<string, React.ReactNode> = {
   pendente: <Clock className="h-4 w-4 text-warning" />,
