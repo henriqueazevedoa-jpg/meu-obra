@@ -426,13 +426,13 @@ function ClienteDashboard() {
             <div key={e.id} className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-foreground">{e.nome}</p>
-                <p className="text-xs text-muted-foreground">{formatDate(e.dataInicioPrevista)} → {formatDate(e.dataFimPrevista)}</p>
+                <p className="text-xs text-muted-foreground">{e.dataInicioPrevista ? formatDate(e.dataInicioPrevista) : '—'} → {e.dataFimPrevista ? formatDate(e.dataFimPrevista) : '—'}</p>
               </div>
               <Badge variant="secondary" className={
-                e.status === 'em_andamento' ? 'bg-primary/10 text-primary border-0' :
+                e.statusCronograma === 'em_andamento' ? 'bg-primary/10 text-primary border-0' :
                 'bg-muted text-muted-foreground border-0'
               }>
-                {statusEtapaLabels[e.status]}
+                {e.statusCronograma ? statusEtapaLabels[e.statusCronograma] : 'Não iniciada'}
               </Badge>
             </div>
           ))}
