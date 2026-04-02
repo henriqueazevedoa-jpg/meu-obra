@@ -791,6 +791,9 @@ ${toPrint.map(r => {
                   <span className="flex items-center gap-1 text-xs text-muted-foreground mr-auto">
                     <Users className="h-3 w-3" /> {registro.trabalhadores}
                   </span>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs px-2" onClick={() => printRegistros([registro.id])}>
+                    <Printer className="h-3 w-3 mr-1" /> Imprimir
+                  </Button>
                   {(user?.role === 'gestor' || (canCreate && registro.status !== 'aprovado')) && (
                     <Button size="sm" variant="ghost" className="h-7 text-xs px-2" onClick={() => loadRegistroForEdit(registro)}>
                       <Pencil className="h-3 w-3 mr-1" /> Editar
