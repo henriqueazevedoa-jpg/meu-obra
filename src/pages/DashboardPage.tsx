@@ -27,6 +27,14 @@ function GestorDashboard() {
   const { selectedObraId, setSelectedObraId } = useObraSelection();
   const obra = obras.find(o => o.id === selectedObraId) || obras[0];
 
+  if (!obra) {
+    return (
+      <div className="flex items-center justify-center py-20 text-muted-foreground text-sm">
+        Nenhuma obra cadastrada. Crie uma obra para começar.
+      </div>
+    );
+  }
+
   const orcamento = getOrcamento(obra.id);
   const categorias = orcamento?.categorias || [];
   const totalPrevisto = categorias.reduce((s, c) => s + c.precoTotal, 0);
