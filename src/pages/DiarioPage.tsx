@@ -137,7 +137,7 @@ export default function DiarioPage() {
   };
 
   const handleSubmit = () => {
-    const hoje = new Date().toISOString().split('T')[0];
+    const hoje = format(dataRegistro, 'yyyy-MM-dd');
     const descGeral = servicos.map(s => s.descricao).filter(Boolean).join('. ') || 'Sem serviços detalhados';
     const filteredServicos = servicos.filter(s => s.descricao.trim());
     const filteredMateriais = materiaisUsados.filter(m => m.materialId && m.quantidade > 0);
