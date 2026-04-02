@@ -179,33 +179,27 @@ function GestorDashboard() {
         </CardContent>
       </Card>
 
-      {/* Alertas */}
-      {(materiaisBaixo > 0 || registrosPendentes > 0 || etapasAtrasadas > 0) && (
+      {/* Pontos de Atenção */}
+      {(etapasAtrasadas > 0 || materiaisObra.filter(m => m.estoqueAtual < m.estoqueMinimo).length > 0 || registrosPendentes > 0) && (
         <Card className="shadow-card border-warning/30">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-warning" />
-              Alertas
+              <AlertTriangle className="h-4 w-4 text-warning" /> Pontos de Atenção
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {materiaisBaixo > 0 && (
-              <div className="flex items-center gap-2 text-sm">
-                <Package className="h-4 w-4 text-warning" />
-                <span className="text-foreground">{materiaisBaixo} material(is) com estoque baixo</span>
-              </div>
-            )}
+            {categorias.filter(c => {
+              if (c.statusCronograma === 'atrasada') return true;
+              if (c.dataFimPrevista && !c.dataFimReal && new Date() > new Date(c.dataFimPrevista)) return true;
+              return false;
+            }).map(c => (
+              <p key={c.id} className="text-sm text-foreground">📅 {c.nome} — etapa atrasada ({computePercentualDash(c)}% concluído)</p>
+            ))}
+            {materiaisObra.filter(m => m.estoqueAtual < m.estoqueMinimo).map(m => (
+              <p key={m.id} className="text-sm text-foreground">📦 {m.nome} — estoque em {m.estoqueAtual} {m.unidade} (mínimo: {m.estoqueMinimo})</p>
+            ))}
             {registrosPendentes > 0 && (
-              <div className="flex items-center gap-2 text-sm">
-                <Clock className="h-4 w-4 text-warning" />
-                <span className="text-foreground">{registrosPendentes} registro(s) pendente(s) de aprovação</span>
-              </div>
-            )}
-            {etapasAtrasadas > 0 && (
-              <div className="flex items-center gap-2 text-sm">
-                <CalendarDays className="h-4 w-4 text-destructive" />
-                <span className="text-foreground">{etapasAtrasadas} etapa(s) atrasada(s)</span>
-              </div>
+              <p className="text-sm text-foreground">📋 {registrosPendentes} registro(s) de diário pendente(s) de aprovação</p>
             )}
           </CardContent>
         </Card>
