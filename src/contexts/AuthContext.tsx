@@ -1,15 +1,26 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { User, UserRole, mockUsers } from '@/data/mockData';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
+
+export type UserRole = 'gestor' | 'funcionario' | 'cliente';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar?: string;
+}
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  signup: (email: string, password: string, nome: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
   hasPermission: (action: string) => boolean;
 }
-
-const AuthContext = createContext<AuthContextType | null>(null);
 
 const rolePermissions: Record<UserRole, string[]> = {
   gestor: [
@@ -33,36 +44,88 @@ const rolePermissions: Record<UserRole, string[]> = {
   ],
 };
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('obrasUser');
-    if (saved) {
-      try { return JSON.parse(saved); } catch { return null; }
-    }
-    return null;
-  });
+const AuthContext = createContext<AuthContextType | null>(null);
 
-  const login = useCallback((email: string, password: string) => {
-    if (password !== '123456') return false;
-    const found = mockUsers.find(u => u.email === email);
-    if (!found) return false;
-    setUser(found);
-    localStorage.setItem('obrasUser', JSON.stringify(found));
-    return true;
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const buildUser = async (su: SupabaseUser): Promise<User> => {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('nome, avatar_url')
+      .eq('user_id', su.id)
+      .single();
+
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', su.id)
+      .single();
+
+    return {
+      id: su.id,
+      name: profile?.nome || su.user_metadata?.nome || su.email?.split('@')[0] || '',
+      email: su.email || '',
+      role: (roleData?.role as UserRole) || 'gestor',
+      avatar: profile?.avatar_url || undefined,
+    };
+  };
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (session?.user) {
+          setTimeout(async () => {
+            const appUser = await buildUser(session.user);
+            setUser(appUser);
+            setLoading(false);
+          }, 0);
+        } else {
+          setUser(null);
+          setLoading(false);
+        }
+      }
+    );
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const appUser = await buildUser(session.user);
+        setUser(appUser);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const logout = useCallback(() => {
+  const login = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return !error;
+  }, []);
+
+  const signup = useCallback(async (email: string, password: string, nome: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { nome } },
+    });
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  }, []);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('obrasUser');
   }, []);
 
   const hasPermission = useCallback((action: string) => {
     if (!user) return false;
-    return rolePermissions[user.role].includes(action);
+    return rolePermissions[user.role]?.includes(action) || false;
   }, [user]);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, hasPermission }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, isAuthenticated: !!user, hasPermission }}>
       {children}
     </AuthContext.Provider>
   );

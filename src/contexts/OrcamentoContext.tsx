@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './AuthContext';
 import { catalogoInsumos, categoriasExtras, InsumoTemplate } from '@/data/catalogoInsumos';
-import { createSeedOrcamentos } from '@/data/seedOrcamentos';
 
 // --- Types ---
 export interface OrcamentoSubitem {
@@ -27,7 +28,7 @@ export interface OrcamentoComposicao {
   dataFimPrevista?: string;
   dataInicioReal?: string;
   dataFimReal?: string;
-  pesoCronograma?: number; // weight % within category for progress
+  pesoCronograma?: number;
   concluida?: boolean;
 }
 
@@ -58,7 +59,6 @@ export interface CategoriaTemplate {
   nome: string;
 }
 
-// Default suggested categories
 const defaultCategorias: CategoriaTemplate[] = [
   { codigo: 'CAT-001', nome: 'Serviços Preliminares' },
   { codigo: 'CAT-002', nome: 'Fundação' },
@@ -76,12 +76,11 @@ const defaultCategorias: CategoriaTemplate[] = [
   ...categoriasExtras,
 ];
 
-// Seed data is now in src/data/seedOrcamentos.ts
-
 interface OrcamentoContextType {
   orcamentos: OrcamentoObra[];
+  loading: boolean;
   getOrcamento: (obraId: string) => OrcamentoObra | undefined;
-  saveOrcamento: (orc: OrcamentoObra) => void;
+  saveOrcamento: (orc: OrcamentoObra) => Promise<void>;
   catalogoCategorias: CategoriaTemplate[];
   addCategoriaToCatalogo: (cat: CategoriaTemplate) => void;
   generateCategoriaCodigo: () => string;
@@ -90,35 +89,251 @@ interface OrcamentoContextType {
   getComposicoesUsadasPorCategoria: (categoriaNome: string) => { descricao: string; unidade: string }[];
   generateComposicaoCodigo: (categoriaCode: string, existingCodes: string[]) => string;
   generateSubitemCodigo: (composicaoCodigo: string, existingCodes: string[]) => string;
+  refreshOrcamentos: () => Promise<void>;
 }
 
 const OrcamentoContext = createContext<OrcamentoContextType | null>(null);
 
+// --- DB mapping helpers ---
+function dbToSubitem(row: any): OrcamentoSubitem {
+  return {
+    id: row.id,
+    codigo: row.codigo || '',
+    descricao: row.descricao || '',
+    unidade: row.unidade || '',
+    quantidade: row.quantidade != null ? Number(row.quantidade) : null,
+    precoUnitario: row.preco_unitario != null ? Number(row.preco_unitario) : null,
+    precoTotal: Number(row.preco_total) || 0,
+  };
+}
+
+function dbToComposicao(row: any, subitens: OrcamentoSubitem[]): OrcamentoComposicao {
+  return {
+    id: row.id,
+    codigo: row.codigo || '',
+    descricao: row.descricao || '',
+    unidade: row.unidade || '',
+    quantidade: row.quantidade != null ? Number(row.quantidade) : null,
+    precoUnitario: row.preco_unitario != null ? Number(row.preco_unitario) : null,
+    precoTotal: Number(row.preco_total) || 0,
+    subitens,
+    usaSubitens: row.usa_subitens || false,
+    dataInicioPrevista: row.data_inicio_prevista || undefined,
+    dataFimPrevista: row.data_fim_prevista || undefined,
+    dataInicioReal: row.data_inicio_real || undefined,
+    dataFimReal: row.data_fim_real || undefined,
+    pesoCronograma: row.peso_cronograma != null ? Number(row.peso_cronograma) : undefined,
+    concluida: row.concluida || false,
+  };
+}
+
+function dbToCategoria(row: any, composicoes: OrcamentoComposicao[]): OrcamentoCategoria {
+  return {
+    id: row.id,
+    codigo: row.codigo || '',
+    nome: row.nome || '',
+    precoTotal: Number(row.preco_total) || 0,
+    usaComposicoes: row.usa_composicoes || false,
+    composicoes,
+    dataInicioPrevista: row.data_inicio_prevista || undefined,
+    dataFimPrevista: row.data_fim_prevista || undefined,
+    dataInicioReal: row.data_inicio_real || undefined,
+    dataFimReal: row.data_fim_real || undefined,
+    statusCronograma: row.status_cronograma || undefined,
+    percentualCronograma: row.percentual_cronograma != null ? Number(row.percentual_cronograma) : undefined,
+    responsavel: row.responsavel || undefined,
+    observacoesCronograma: row.observacoes_cronograma || undefined,
+  };
+}
+
 export function OrcamentoProvider({ children }: { children: React.ReactNode }) {
-  const [orcamentos, setOrcamentos] = useState<OrcamentoObra[]>(createSeedOrcamentos);
+  const { user } = useAuth();
+  const [orcamentos, setOrcamentos] = useState<OrcamentoObra[]>([]);
   const [catalogoCategorias, setCatalogo] = useState<CategoriaTemplate[]>(defaultCategorias);
+  const [loading, setLoading] = useState(true);
+
+  const fetchAll = useCallback(async () => {
+    if (!user) { setOrcamentos([]); setLoading(false); return; }
+
+    const [catRes, compRes, subRes] = await Promise.all([
+      supabase.from('orcamento_categorias').select('*'),
+      supabase.from('orcamento_composicoes').select('*'),
+      supabase.from('orcamento_subitens').select('*'),
+    ]);
+
+    const cats = catRes.data || [];
+    const comps = compRes.data || [];
+    const subs = subRes.data || [];
+
+    // Group subitens by composicao_id
+    const subsByComp = new Map<string, any[]>();
+    for (const s of subs) {
+      const arr = subsByComp.get(s.composicao_id) || [];
+      arr.push(s);
+      subsByComp.set(s.composicao_id, arr);
+    }
+
+    // Group composicoes by categoria_id
+    const compsByCat = new Map<string, OrcamentoComposicao[]>();
+    for (const c of comps) {
+      const compSubs = (subsByComp.get(c.id) || []).map(dbToSubitem);
+      const comp = dbToComposicao(c, compSubs);
+      const arr = compsByCat.get(c.categoria_id) || [];
+      arr.push(comp);
+      compsByCat.set(c.categoria_id, arr);
+    }
+
+    // Group categorias by obra_id
+    const obraMap = new Map<string, OrcamentoCategoria[]>();
+    for (const cat of cats) {
+      const catComps = compsByCat.get(cat.id) || [];
+      const categoria = dbToCategoria(cat, catComps);
+      const arr = obraMap.get(cat.obra_id) || [];
+      arr.push(categoria);
+      obraMap.set(cat.obra_id, arr);
+    }
+
+    const result: OrcamentoObra[] = [];
+    for (const [obraId, categorias] of obraMap) {
+      result.push({ obraId, categorias });
+    }
+
+    setOrcamentos(result);
+
+    // Update catalog with found categories
+    setCatalogo(prev => {
+      const next = [...prev];
+      for (const cat of cats) {
+        if (!next.some(c => c.codigo === cat.codigo)) {
+          next.push({ codigo: cat.codigo, nome: cat.nome });
+        }
+      }
+      return next;
+    });
+
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
 
   const getOrcamento = useCallback((obraId: string) => {
     return orcamentos.find(o => o.obraId === obraId);
   }, [orcamentos]);
 
-  const saveOrcamento = useCallback((orc: OrcamentoObra) => {
-    setOrcamentos(prev => {
-      const idx = prev.findIndex(o => o.obraId === orc.obraId);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = orc;
-        return next;
+  const saveOrcamento = useCallback(async (orc: OrcamentoObra) => {
+    const obraId = orc.obraId;
+
+    // Get existing IDs from current cache
+    const existing = orcamentos.find(o => o.obraId === obraId);
+    const existingCatIds = new Set<string>();
+    const existingCompIds = new Set<string>();
+    const existingSubIds = new Set<string>();
+
+    if (existing) {
+      for (const cat of existing.categorias) {
+        existingCatIds.add(cat.id);
+        for (const comp of cat.composicoes) {
+          existingCompIds.add(comp.id);
+          for (const sub of comp.subitens) {
+            existingSubIds.add(sub.id);
+          }
+        }
       }
-      return [...prev, orc];
-    });
+    }
+
+    const newCatIds = new Set<string>();
+    const newCompIds = new Set<string>();
+    const newSubIds = new Set<string>();
+
+    // Upsert categorias
+    for (const cat of orc.categorias) {
+      newCatIds.add(cat.id);
+
+      await supabase.from('orcamento_categorias').upsert({
+        id: cat.id,
+        obra_id: obraId,
+        codigo: cat.codigo,
+        nome: cat.nome,
+        preco_total: cat.precoTotal,
+        usa_composicoes: cat.usaComposicoes,
+        data_inicio_prevista: cat.dataInicioPrevista || null,
+        data_fim_prevista: cat.dataFimPrevista || null,
+        data_inicio_real: cat.dataInicioReal || null,
+        data_fim_real: cat.dataFimReal || null,
+        status_cronograma: (cat.statusCronograma as any) || null,
+        percentual_cronograma: cat.percentualCronograma ?? null,
+        responsavel: cat.responsavel || null,
+        observacoes_cronograma: cat.observacoesCronograma || null,
+      });
+
+      // Upsert composicoes
+      for (const comp of cat.composicoes) {
+        newCompIds.add(comp.id);
+
+        await supabase.from('orcamento_composicoes').upsert({
+          id: comp.id,
+          categoria_id: cat.id,
+          codigo: comp.codigo,
+          descricao: comp.descricao,
+          unidade: comp.unidade || null,
+          quantidade: comp.quantidade,
+          preco_unitario: comp.precoUnitario,
+          preco_total: comp.precoTotal,
+          usa_subitens: comp.usaSubitens,
+          data_inicio_prevista: comp.dataInicioPrevista || null,
+          data_fim_prevista: comp.dataFimPrevista || null,
+          data_inicio_real: comp.dataInicioReal || null,
+          data_fim_real: comp.dataFimReal || null,
+          peso_cronograma: comp.pesoCronograma ?? null,
+          concluida: comp.concluida || false,
+        });
+
+        // Upsert subitens
+        for (const sub of comp.subitens) {
+          newSubIds.add(sub.id);
+
+          await supabase.from('orcamento_subitens').upsert({
+            id: sub.id,
+            composicao_id: comp.id,
+            codigo: sub.codigo,
+            descricao: sub.descricao,
+            unidade: sub.unidade || null,
+            quantidade: sub.quantidade,
+            preco_unitario: sub.precoUnitario,
+            preco_total: sub.precoTotal,
+          });
+        }
+      }
+    }
+
+    // Delete removed items (order: subitens → composicoes → categorias)
+    const subsToDelete = [...existingSubIds].filter(id => !newSubIds.has(id));
+    const compsToDelete = [...existingCompIds].filter(id => !newCompIds.has(id));
+    const catsToDelete = [...existingCatIds].filter(id => !newCatIds.has(id));
+
+    if (subsToDelete.length > 0) {
+      await supabase.from('orcamento_subitens').delete().in('id', subsToDelete);
+    }
+    if (compsToDelete.length > 0) {
+      await supabase.from('orcamento_composicoes').delete().in('id', compsToDelete);
+    }
+    if (catsToDelete.length > 0) {
+      await supabase.from('orcamento_categorias').delete().in('id', catsToDelete);
+    }
+
+    // Update catalog
     for (const cat of orc.categorias) {
       setCatalogo(prev => {
         if (prev.some(c => c.codigo === cat.codigo)) return prev;
         return [...prev, { codigo: cat.codigo, nome: cat.nome }];
       });
     }
-  }, []);
+
+    // Refetch
+    await fetchAll();
+  }, [orcamentos, fetchAll]);
 
   const addCategoriaToCatalogo = useCallback((cat: CategoriaTemplate) => {
     setCatalogo(prev => {
@@ -171,10 +386,8 @@ export function OrcamentoProvider({ children }: { children: React.ReactNode }) {
     return Array.from(set).sort();
   }, [orcamentos]);
 
-  // Return catalog items + items used in any obra for a given category
   const getSugestaoInsumos = useCallback((categoriaNome: string): InsumoTemplate[] => {
     const fromCatalog = catalogoInsumos.filter(i => i.categoriaRef === categoriaNome);
-    // Also collect from existing orcamentos
     const fromExisting: InsumoTemplate[] = [];
     for (const orc of orcamentos) {
       for (const cat of orc.categorias) {
@@ -208,9 +421,10 @@ export function OrcamentoProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <OrcamentoContext.Provider value={{
-      orcamentos, getOrcamento, saveOrcamento, catalogoCategorias, addCategoriaToCatalogo,
-      generateCategoriaCodigo, getUnidadesUsadas, getSugestaoInsumos, getComposicoesUsadasPorCategoria,
-      generateComposicaoCodigo, generateSubitemCodigo,
+      orcamentos, loading, getOrcamento, saveOrcamento, catalogoCategorias,
+      addCategoriaToCatalogo, generateCategoriaCodigo, getUnidadesUsadas,
+      getSugestaoInsumos, getComposicoesUsadasPorCategoria,
+      generateComposicaoCodigo, generateSubitemCodigo, refreshOrcamentos: fetchAll,
     }}>
       {children}
     </OrcamentoContext.Provider>
