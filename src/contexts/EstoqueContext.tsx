@@ -8,6 +8,7 @@ interface EstoqueContextType {
   getMovimentacoesByObra: (obraId: string) => MovimentacaoEstoque[];
   registrarMovimentacao: (mov: MovimentacaoEstoque) => void;
   addMaterial: (material: Material) => void;
+  updateMaterial: (id: string, data: Partial<Material>) => void;
 }
 
 const EstoqueContext = createContext<EstoqueContextType | null>(null);
