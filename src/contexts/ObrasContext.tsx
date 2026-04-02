@@ -55,7 +55,7 @@ export function ObrasProvider({ children }: { children: React.ReactNode }) {
   }, [fetchObras]);
 
   const addObra = useCallback(async (obra: Omit<Obra, 'id'> & { id?: string }) => {
-    const { data, error } = await supabase.from('obras').insert({
+    const insertData: any = {
       nome: obra.nome,
       codigo: obra.codigo,
       cliente: obra.cliente || null,
@@ -66,7 +66,10 @@ export function ObrasProvider({ children }: { children: React.ReactNode }) {
       responsavel: obra.responsavel || null,
       percentual_andamento: obra.percentualAndamento || 0,
       descricao: obra.descricao || '',
-    }).select().single();
+    };
+    if (company) insertData.company_id = company.id;
+
+    const { data, error } = await supabase.from('obras').insert(insertData).select().single();
 
     if (error || !data) return null;
 

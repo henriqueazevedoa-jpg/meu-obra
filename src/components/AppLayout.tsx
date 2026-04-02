@@ -79,7 +79,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (!user) return null;
 
-  const links = user.role === 'gestor' ? gestorLinks : user.role === 'funcionario' ? funcionarioLinks : clienteLinks;
+  const links = user.role === 'admin' ? adminLinks : user.role === 'gestor' ? gestorLinks : user.role === 'funcionario' ? funcionarioLinks : clienteLinks;
   const mobileTabs = user.role === 'gestor' ? mobileGestorTabs : user.role === 'funcionario' ? mobileFuncionarioTabs : mobileClienteTabs;
   const mobileTabRoutes = mobileTabs.filter(t => t.to !== '/_more').map(t => t.to);
   const moreLinks = links.filter(l => !mobileTabRoutes.includes(l.to));
