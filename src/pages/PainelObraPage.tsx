@@ -18,11 +18,14 @@ import {
 } from '@/data/mockData';
 import {
   TrendingUp, AlertTriangle, CheckCircle2, Package, BookOpen,
-  Printer, Clock, CalendarDays, DollarSign, Users, Building2,
-  ArrowRight, BarChart3
+  Clock, CalendarDays, DollarSign, Users, Building2,
+  BarChart3
 } from 'lucide-react';
 import { format, parseISO, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import SCurveChart from '@/components/painel/SCurveChart';
+import ABCTable from '@/components/painel/ABCTable';
+import PrintSectionPicker, { PrintSections, defaultPrintSections } from '@/components/painel/PrintSectionPicker';
 
 interface DiarioRow {
   id: string; data: string; clima: string; trabalhadores: number;
