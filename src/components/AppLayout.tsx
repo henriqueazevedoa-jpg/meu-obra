@@ -25,12 +25,11 @@ const funcionarioLinks = [
 ];
 
 const clienteLinks = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/painel', label: 'Painel da Obra', icon: LayoutDashboard },
   { to: '/obras', label: 'Obras', icon: Building2 },
   { to: '/orcamento', label: 'Orçamento', icon: DollarSign },
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
   { to: '/diario', label: 'Diário', icon: BookOpen },
-  { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
 ];
 
 // Bottom tab bar: show most-used items for field work
