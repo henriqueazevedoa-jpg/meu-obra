@@ -15,8 +15,8 @@ export default function PerfilPage() {
 
   const { obras } = useObras();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 

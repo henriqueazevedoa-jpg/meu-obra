@@ -236,7 +236,7 @@ export default function CronogramaPage() {
       return;
     }
     const cat: OrcamentoCategoria = {
-      id: `cat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: crypto.randomUUID(),
       codigo: generateCategoriaCodigo(),
       nome: newCatName.trim(),
       precoTotal: 0,

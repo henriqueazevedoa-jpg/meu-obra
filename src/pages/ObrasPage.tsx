@@ -100,7 +100,7 @@ export default function ObrasPage() {
       toast({ title: 'Obra atualizada com sucesso!' });
     } else {
       const newObra: Obra = {
-        id: `obra-${Date.now()}`,
+        id: crypto.randomUUID(),
         ...form,
         percentualAndamento: 0,
       };

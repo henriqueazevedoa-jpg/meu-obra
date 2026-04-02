@@ -93,10 +93,10 @@ export default function OrcamentoEditor({ obraId, obraNome, onBack }: Props) {
     // Deep clone with new IDs
     const cloned = source.categorias.map(cat => ({
       ...cat,
-      id: `cat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: crypto.randomUUID(),
       composicoes: cat.composicoes.map(comp => ({
         ...comp,
-        id: `comp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        id: crypto.randomUUID(),
         subitens: comp.subitens.map(si => ({
           ...si,
           id: `si-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
