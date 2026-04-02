@@ -66,19 +66,33 @@ export default function DiarioPage() {
     return cat.percentualCronograma || 0;
   };
 
-  // Compute accumulated % for a category from all approved registros
+  // Compute accumulated % for a category/composição combining cronograma baseline + diário entries
   const getAccumulatedPercent = (categoriaId: string, composicaoId?: string): number => {
-    let total = 0;
+    const cat = categorias.find(c => c.id === categoriaId);
+    if (!cat) return 0;
+
+    // Start with existing cronograma baseline
+    let baseline = 0;
+    if (composicaoId) {
+      const comp = cat.composicoes.find(c => c.id === composicaoId);
+      if (comp?.concluida) return 100;
+      // Use pesoCronograma as accumulated progress if set from cronograma
+    } else {
+      baseline = cat.percentualCronograma || 0;
+    }
+
+    // Add percentages from diário servicos
+    let fromDiario = 0;
     for (const reg of registros) {
       for (const svc of reg.servicos) {
         if (composicaoId) {
-          if (svc.composicaoId === composicaoId) total += (svc.percentualAdicionado || 0);
+          if (svc.composicaoId === composicaoId) fromDiario += (svc.percentualAdicionado || 0);
         } else {
-          if (svc.categoriaId === categoriaId && !svc.composicaoId) total += (svc.percentualAdicionado || 0);
+          if (svc.categoriaId === categoriaId && !svc.composicaoId) fromDiario += (svc.percentualAdicionado || 0);
         }
       }
     }
-    return Math.min(100, total);
+    return Math.min(100, baseline + fromDiario);
   };
 
   // --- Servico handlers ---
