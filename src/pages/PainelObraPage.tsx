@@ -19,7 +19,7 @@ import {
 import {
   TrendingUp, AlertTriangle, CheckCircle2, Package, BookOpen,
   Clock, CalendarDays, DollarSign, Users, Building2,
-  BarChart3
+  BarChart3, Plus
 } from 'lucide-react';
 import { format, parseISO, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
