@@ -27,6 +27,7 @@ export default function OrcamentoEditor({ obraId, obraNome, onBack }: Props) {
   const [customCatName, setCustomCatName] = useState('');
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importObraId, setImportObraId] = useState('');
+  const [allExpanded, setAllExpanded] = useState<boolean | undefined>(undefined);
 
   const unidades = getUnidadesUsadas();
 
