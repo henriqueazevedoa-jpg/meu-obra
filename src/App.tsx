@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ObrasProvider } from "@/contexts/ObrasContext";
 import { OrcamentoProvider } from "@/contexts/OrcamentoContext";
 import { EstoqueProvider } from "@/contexts/EstoqueContext";
+import { ObraSelectionProvider } from "@/contexts/ObraSelectionContext";
 import AppLayout from "@/components/AppLayout";
 import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
