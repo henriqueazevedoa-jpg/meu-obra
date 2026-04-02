@@ -182,6 +182,7 @@ export default function DiarioPage() {
 
       setRegistros(registros.map(r => r.id === editingId ? {
         ...r,
+        data: hoje,
         clima,
         trabalhadores: parseInt(trabalhadores) || 0,
         servicosExecutados: descGeral,
