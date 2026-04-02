@@ -153,7 +153,7 @@ function GestorPainel() {
           <p className="text-muted-foreground text-sm">Visão executiva consolidada</p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={selectedObraId} onValueChange={setSelectedObraId}>
+          <Select value={selectedObraId} onValueChange={handleObraSelectChange}>
             <SelectTrigger className="w-[280px] h-9 text-sm">
               <SelectValue placeholder="Selecionar obra..." />
             </SelectTrigger>
@@ -161,6 +161,9 @@ function GestorPainel() {
               {obras.map(o => (
                 <SelectItem key={o.id} value={o.id}>{o.codigo} - {o.nome}</SelectItem>
               ))}
+              <SelectItem value="__nova_obra__" className="text-primary font-medium">
+                <span className="flex items-center gap-2"><Plus className="h-3.5 w-3.5" /> Criar Nova Obra</span>
+              </SelectItem>
             </SelectContent>
           </Select>
           <PrintSectionPicker sections={printSections} onChange={setPrintSections} onPrint={handlePrint} />
