@@ -39,7 +39,6 @@ export function ObrasProvider({ children }: { children: React.ReactNode }) {
   const { company } = useCompany();
   const [obras, setObras] = useState<Obra[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loading, setLoading] = useState(true);
 
   const fetchObras = useCallback(async () => {
     if (!user) { setObras([]); setLoading(false); return; }
