@@ -193,7 +193,7 @@ export default function CronogramaPage() {
   const { obras } = useObras();
   const { getOrcamento, saveOrcamento, catalogoCategorias, generateCategoriaCodigo } = useOrcamento();
 
-  const [selectedObraId, setSelectedObraId] = useState(obras[0]?.id || '');
+  const { selectedObraId, setSelectedObraId } = useObraSelection();
   const [viewMode, setViewMode] = useState<'list' | 'gantt'>('list');
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [newCatName, setNewCatName] = useState('');
