@@ -129,7 +129,64 @@ export default function DiarioPage() {
   const handleSubmit = () => {
     const hoje = new Date().toISOString().split('T')[0];
     const descGeral = servicos.map(s => s.descricao).filter(Boolean).join('. ') || 'Sem serviços detalhados';
+    const filteredServicos = servicos.filter(s => s.descricao.trim());
+    const filteredMateriais = materiaisUsados.filter(m => m.materialId && m.quantidade > 0);
 
+    if (editingId) {
+      // --- EDIT MODE ---
+      const oldRegistro = registros.find(r => r.id === editingId);
+      
+      // Reverse old material movements (return stock)
+      if (oldRegistro) {
+        for (const oldMat of oldRegistro.materiaisUtilizados) {
+          registrarMovimentacao({
+            id: `mv${Date.now()}-rev-${oldMat.materialId}`,
+            obraId: obra.id,
+            materialId: oldMat.materialId,
+            materialNome: oldMat.materialNome,
+            tipo: 'entrada',
+            data: hoje,
+            quantidade: oldMat.quantidade,
+            origemDestino: `Estorno - Edição Diário ${formatDate(oldRegistro.data)}`,
+            responsavel: user?.name || '',
+            observacoes: 'Estorno automático por edição de registro',
+          });
+        }
+      }
+
+      // Register new material movements
+      for (const matUsado of filteredMateriais) {
+        registrarMovimentacao({
+          id: `mv${Date.now()}-${matUsado.materialId}`,
+          obraId: obra.id,
+          materialId: matUsado.materialId,
+          materialNome: matUsado.materialNome,
+          tipo: 'saida',
+          data: hoje,
+          quantidade: matUsado.quantidade,
+          origemDestino: `Diário de Obra - ${oldRegistro ? formatDate(oldRegistro.data) : hoje}`,
+          responsavel: user?.name || '',
+          observacoes: 'Registro automático via Diário de Obra (edição)',
+        });
+      }
+
+      setRegistros(registros.map(r => r.id === editingId ? {
+        ...r,
+        clima,
+        trabalhadores: parseInt(trabalhadores) || 0,
+        servicosExecutados: descGeral,
+        servicos: filteredServicos,
+        materiaisUtilizados: filteredMateriais,
+        observacoes,
+        problemas,
+      } : r));
+
+      setDialogOpen(false);
+      resetForm();
+      return;
+    }
+
+    // --- CREATE MODE ---
     const novo: DiarioRegistro = {
       id: `d${Date.now()}`,
       obraId: obra.id,
@@ -139,8 +196,8 @@ export default function DiarioPage() {
       clima,
       trabalhadores: parseInt(trabalhadores) || 0,
       servicosExecutados: descGeral,
-      servicos: servicos.filter(s => s.descricao.trim()),
-      materiaisUtilizados: materiaisUsados.filter(m => m.materialId && m.quantidade > 0),
+      servicos: filteredServicos,
+      materiaisUtilizados: filteredMateriais,
       observacoes,
       problemas,
       fotos: [],
@@ -163,11 +220,9 @@ export default function DiarioPage() {
                 const comp = cat.composicoes[compIdx];
                 const accum = getAccumulatedPercent(svc.categoriaId, svc.composicaoId) + svc.percentualAdicionado;
 
-                // Start real date if first time
                 if (!comp.dataInicioReal) {
                   comp.dataInicioReal = hoje;
                 }
-                // Complete if reaches 100%
                 if (accum >= 100) {
                   comp.concluida = true;
                   comp.dataFimReal = hoje;
@@ -175,14 +230,12 @@ export default function DiarioPage() {
               }
             }
 
-            // Update category status
             const totalAccum = getAccumulatedPercent(svc.categoriaId) + (svc.composicaoId ? 0 : svc.percentualAdicionado);
             if (!cat.dataInicioReal) {
               cat.dataInicioReal = hoje;
               cat.statusCronograma = 'em_andamento';
             }
 
-            // Recalculate category percentage
             const catPercent = cat.composicoes.length > 0
               ? cat.composicoes.reduce((sum, comp) => {
                   const compAccum = getAccumulatedPercent(cat.id, comp.id) +
