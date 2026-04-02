@@ -29,7 +29,8 @@ function GestorDashboard() {
   const orcamento = getOrcamento(obra.id);
   const categorias = orcamento?.categorias || [];
   const totalPrevisto = categorias.reduce((s, c) => s + c.precoTotal, 0);
-  const totalRealizado = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoRealizado, 0);
+
+  const today = new Date();
 
   // Compute physical progress from cronograma categories
   const computePercentual = (cat: typeof categorias[0]) => {
