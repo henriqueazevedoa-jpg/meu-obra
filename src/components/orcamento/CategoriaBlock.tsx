@@ -28,7 +28,15 @@ interface Props {
 
 export default function CategoriaBlock({ categoria, unidades, onChange, onRemove, getSugestaoInsumos, generateComposicaoCodigo, generateSubitemCodigo, forceExpanded }: Props) {
   const [localExpanded, setLocalExpanded] = useState(true);
-  const expanded = forceExpanded !== undefined ? forceExpanded : localExpanded;
+  const [forceApplied, setForceApplied] = useState<boolean | undefined>(undefined);
+
+  // Sync with forceExpanded from parent, but allow local override after
+  if (forceExpanded !== undefined && forceExpanded !== forceApplied) {
+    setLocalExpanded(forceExpanded);
+    setForceApplied(forceExpanded);
+  }
+
+  const expanded = localExpanded;
   const setExpanded = (v: boolean) => setLocalExpanded(v);
   const [addMode, setAddMode] = useState<'manual' | 'sugestao'>('sugestao');
   const [selectedInsumo, setSelectedInsumo] = useState('');
