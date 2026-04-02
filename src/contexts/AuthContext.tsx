@@ -23,6 +23,13 @@ interface AuthContextType {
 }
 
 const rolePermissions: Record<UserRole, string[]> = {
+  admin: [
+    'dashboard:full', 'obras:create', 'obras:edit', 'obras:view',
+    'orcamento:edit', 'orcamento:view', 'cronograma:edit', 'cronograma:view',
+    'diario:view', 'diario:approve', 'diario:create',
+    'estoque:view', 'estoque:edit', 'estoque:movimentar',
+    'relatorios:view', 'usuarios:manage', 'admin:platform',
+  ],
   gestor: [
     'dashboard:full', 'obras:create', 'obras:edit', 'obras:view',
     'orcamento:edit', 'orcamento:view', 'cronograma:edit', 'cronograma:view',
