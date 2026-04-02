@@ -208,11 +208,15 @@ function GestorPainel() {
         <Card className="shadow-card print:shadow-none print:border">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-1">
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <DollarSign className="h-4 w-4 text-success" />
               <p className="text-xs text-muted-foreground font-medium">Custo Realizado</p>
             </div>
-            <p className="text-lg font-bold text-foreground text-muted-foreground/50">—</p>
-            <p className="text-[10px] text-muted-foreground">Em breve</p>
+            <p className="text-lg font-bold text-foreground">{custoItens.length > 0 ? formatCurrency(totalRealizado) : '—'}</p>
+            {custoItens.length > 0 && desvioOrcamento !== 0 && (
+              <p className={`text-[10px] font-medium ${desvioOrcamento > 0 ? 'text-destructive' : 'text-success'}`}>
+                {desvioOrcamento >= 0 ? '+' : ''}{formatCurrency(desvioOrcamento)}
+              </p>
+            )}
           </CardContent>
         </Card>
         <Card className="shadow-card print:shadow-none print:border">
