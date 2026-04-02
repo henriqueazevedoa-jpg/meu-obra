@@ -4,6 +4,7 @@ import { useObras } from '@/contexts/ObrasContext';
 import { useObraSelection } from '@/contexts/ObraSelectionContext';
 import { useOrcamento } from '@/contexts/OrcamentoContext';
 import { useEstoque } from '@/contexts/EstoqueContext';
+import { useCustoReal } from '@/contexts/CustoRealContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
