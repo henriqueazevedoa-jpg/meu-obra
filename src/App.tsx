@@ -52,7 +52,9 @@ function AppProviders({ children }: { children: React.ReactNode }) {
         <AuthProvider>
           <ObrasProvider>
             <OrcamentoProvider>
-              <EstoqueProvider>{children}</EstoqueProvider>
+              <EstoqueProvider>
+                <ObraSelectionProvider>{children}</ObraSelectionProvider>
+              </EstoqueProvider>
             </OrcamentoProvider>
           </ObrasProvider>
         </AuthProvider>
