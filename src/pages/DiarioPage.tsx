@@ -587,7 +587,7 @@ export default function DiarioPage() {
                   }>
                     {statusDiarioLabels[registro.status]}
                   </Badge>
-                  {canCreate && registro.status !== 'aprovado' && (
+                  {(user?.role === 'gestor' || (canCreate && registro.status !== 'aprovado')) && (
                     <Button size="sm" variant="ghost" onClick={() => loadRegistroForEdit(registro)}>
                       <Pencil className="h-3.5 w-3.5 mr-1" /> Editar
                     </Button>
