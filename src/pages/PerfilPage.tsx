@@ -1,18 +1,19 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Building2, LogOut } from 'lucide-react';
+import { User, Mail, Building2, LogOut, Crown } from 'lucide-react';
 import { useObras } from '@/contexts/ObrasContext';
 import { useNavigate } from 'react-router-dom';
 
-const roleLabels = { gestor: 'Gestor da Obra', funcionario: 'Funcionário / Equipe de Campo', cliente: 'Dono da Obra / Cliente' };
+const roleLabels: Record<string, string> = { admin: 'Admin da Plataforma', gestor: 'Gestor da Obra', funcionario: 'Funcionário / Equipe de Campo', cliente: 'Dono da Obra / Cliente' };
 
 export default function PerfilPage() {
   const { user, logout } = useAuth();
+  const { company, plan, subscription } = useCompany();
   const navigate = useNavigate();
   if (!user) return null;
-
   const { obras } = useObras();
 
   const handleLogout = async () => {
@@ -51,6 +52,19 @@ export default function PerfilPage() {
               </div>
             </div>
           </div>
+
+          {company && (
+            <div className="flex items-start gap-3 text-sm pt-2 border-t">
+              <Crown className="h-4 w-4 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="font-medium text-foreground">{company.nome}</p>
+                <p className="text-xs text-muted-foreground">
+                  Plano {plan?.nome_comercial || '—'}
+                  {subscription && <> · {subscription.status === 'trial' ? 'Período de teste' : subscription.status === 'active' ? 'Ativo' : subscription.status}</>}
+                </p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

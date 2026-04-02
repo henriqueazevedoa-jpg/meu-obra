@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { supabase } from '@/integrations/supabase/client';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
-export type UserRole = 'gestor' | 'funcionario' | 'cliente';
+export type UserRole = 'gestor' | 'funcionario' | 'cliente' | 'admin';
 
 export interface User {
   id: string;
@@ -23,6 +23,13 @@ interface AuthContextType {
 }
 
 const rolePermissions: Record<UserRole, string[]> = {
+  admin: [
+    'dashboard:full', 'obras:create', 'obras:edit', 'obras:view',
+    'orcamento:edit', 'orcamento:view', 'cronograma:edit', 'cronograma:view',
+    'diario:view', 'diario:approve', 'diario:create',
+    'estoque:view', 'estoque:edit', 'estoque:movimentar',
+    'relatorios:view', 'usuarios:manage', 'admin:platform',
+  ],
   gestor: [
     'dashboard:full', 'obras:create', 'obras:edit', 'obras:view',
     'orcamento:edit', 'orcamento:view', 'cronograma:edit', 'cronograma:view',
