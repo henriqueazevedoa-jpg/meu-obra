@@ -357,10 +357,10 @@ function FuncionarioDashboard() {
             <div key={d.id} className="flex items-center justify-between border-b border-border pb-2 last:border-0">
               <div>
                 <p className="text-sm font-medium text-foreground">{formatDate(d.data)}</p>
-                <p className="text-xs text-muted-foreground line-clamp-1">{d.servicosExecutados}</p>
+                <p className="text-xs text-muted-foreground line-clamp-1">{d.servicos_executados}</p>
               </div>
               <Badge variant="secondary" className={d.status === 'aprovado' ? 'bg-success/10 text-success border-0' : 'bg-warning/10 text-warning border-0'}>
-                {statusDiarioLabels[d.status]}
+                {statusDiarioLabels[d.status as keyof typeof statusDiarioLabels]}
               </Badge>
             </div>
           ))}
