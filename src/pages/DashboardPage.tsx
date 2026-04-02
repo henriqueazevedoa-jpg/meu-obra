@@ -45,9 +45,18 @@ function GestorDashboard() {
     return Math.round((done / totalPeso) * 100);
   };
 
-  const progressoFisico = categorias.length > 0
+  const andamentoReal = categorias.length > 0
     ? Math.round(categorias.reduce((s, c) => s + computePercentual(c), 0) / categorias.length)
     : obra.percentualAndamento;
+
+  // Andamento Planejado: % of etapas whose dataFimPrevista <= today
+  const andamentoPlanejado = (() => {
+    if (categorias.length === 0) return 0;
+    const withDates = categorias.filter(c => c.dataFimPrevista);
+    if (withDates.length === 0) return 0;
+    const shouldBeDone = withDates.filter(c => new Date(c.dataFimPrevista!) <= today).length;
+    return Math.round((shouldBeDone / categorias.length) * 100);
+  })();
 
   const materiaisObra = getMateriaisByObra(obra.id);
   const materiaisBaixo = materiaisObra.filter(m => m.estoqueAtual < m.estoqueMinimo).length;
