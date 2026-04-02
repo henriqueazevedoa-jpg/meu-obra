@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useObras } from '@/contexts/ObrasContext';
+import { useObraSelection } from '@/contexts/ObraSelectionContext';
 import { useOrcamento, OrcamentoCategoria, OrcamentoComposicao } from '@/contexts/OrcamentoContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -192,7 +193,7 @@ export default function CronogramaPage() {
   const { obras } = useObras();
   const { getOrcamento, saveOrcamento, catalogoCategorias, generateCategoriaCodigo } = useOrcamento();
 
-  const [selectedObraId, setSelectedObraId] = useState(obras[0]?.id || '');
+  const { selectedObraId, setSelectedObraId } = useObraSelection();
   const [viewMode, setViewMode] = useState<'list' | 'gantt'>('list');
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [newCatName, setNewCatName] = useState('');

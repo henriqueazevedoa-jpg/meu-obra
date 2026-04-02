@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useObras } from '@/contexts/ObrasContext';
+import { useObraSelection } from '@/contexts/ObraSelectionContext';
 import { useOrcamento } from '@/contexts/OrcamentoContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +16,7 @@ export default function OrcamentoPage() {
   const { user } = useAuth();
   const { obras } = useObras();
   const { getOrcamento } = useOrcamento();
-  const [selectedObraId, setSelectedObraId] = useState(obras[0]?.id || '');
+  const { selectedObraId, setSelectedObraId } = useObraSelection();
   const [editing, setEditing] = useState(false);
 
   const obra = obras.find(o => o.id === selectedObraId);

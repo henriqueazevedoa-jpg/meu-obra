@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEstoque } from '@/contexts/EstoqueContext';
 import { useObras } from '@/contexts/ObrasContext';
+import { useObraSelection } from '@/contexts/ObraSelectionContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,7 @@ export default function EstoquePage() {
   const { user, hasPermission } = useAuth();
   const { obras } = useObras();
   const { getMateriaisByObra, getMovimentacoesByObra, registrarMovimentacao, addMaterial, updateMaterial } = useEstoque();
-  const [obraId, setObraId] = useState(obras[0]?.id || '');
+  const { selectedObraId: obraId, setSelectedObraId: setObraId } = useObraSelection();
   const obra = obras.find(o => o.id === obraId) || obras[0];
   const materiais = getMateriaisByObra(obra.id);
   const movimentacoes = getMovimentacoesByObra(obra.id);
