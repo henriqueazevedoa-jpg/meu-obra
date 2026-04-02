@@ -160,10 +160,10 @@ function GestorDashboard() {
           <p className="text-sm text-muted-foreground mb-3">{obra.endereco}</p>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Progresso</span>
-              <span className="font-medium text-foreground">{progressoFisico}%</span>
+              <span className="text-muted-foreground">Progresso Real</span>
+              <span className="font-medium text-foreground">{andamentoReal}%</span>
             </div>
-            <Progress value={progressoFisico} className="h-2" />
+            <Progress value={andamentoReal} className="h-2" />
           </div>
           <div className="grid grid-cols-2 gap-4 mt-4">
             <div>
@@ -171,8 +171,8 @@ function GestorDashboard() {
               <p className="text-sm font-semibold text-foreground">{formatCurrency(totalPrevisto)}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Orçamento Realizado</p>
-              <p className="text-sm font-semibold text-foreground">{formatCurrency(totalRealizado)}</p>
+              <p className="text-xs text-muted-foreground">Planejado vs Real</p>
+              <p className="text-sm font-semibold text-foreground">{andamentoPlanejado}% → {andamentoReal}%</p>
             </div>
           </div>
         </CardContent>
