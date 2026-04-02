@@ -8,6 +8,7 @@ interface EstoqueContextType {
   getMovimentacoesByObra: (obraId: string) => MovimentacaoEstoque[];
   registrarMovimentacao: (mov: MovimentacaoEstoque) => void;
   addMaterial: (material: Material) => void;
+  updateMaterial: (id: string, data: Partial<Material>) => void;
 }
 
 const EstoqueContext = createContext<EstoqueContextType | null>(null);
@@ -43,10 +44,14 @@ export function EstoqueProvider({ children }: { children: React.ReactNode }) {
     setMateriais(prev => [...prev, material]);
   }, []);
 
+  const updateMaterial = useCallback((id: string, data: Partial<Material>) => {
+    setMateriais(prev => prev.map(m => m.id === id ? { ...m, ...data } : m));
+  }, []);
+
   return (
     <EstoqueContext.Provider value={{
       materiais, movimentacoes, getMateriaisByObra, getMovimentacoesByObra,
-      registrarMovimentacao, addMaterial,
+      registrarMovimentacao, addMaterial, updateMaterial,
     }}>
       {children}
     </EstoqueContext.Provider>
