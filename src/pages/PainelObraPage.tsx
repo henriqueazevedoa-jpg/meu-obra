@@ -58,6 +58,7 @@ function GestorPainel() {
   const { selectedObraId, setSelectedObraId } = useObraSelection();
   const { getOrcamento } = useOrcamento();
   const { getMateriaisByObra } = useEstoque();
+  const { getItensByObra: getCustoItensByObra } = useCustoReal();
   const [diarioRegistros, setDiarioRegistros] = useState<DiarioRow[]>([]);
 
   const obra = obras.find(o => o.id === selectedObraId) || obras[0];
