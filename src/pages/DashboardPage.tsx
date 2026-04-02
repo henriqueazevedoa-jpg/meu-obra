@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Link } from 'react-router-dom';
 import {
   Building2, DollarSign, CalendarDays, BookOpen, Package,
-  BarChart3, AlertTriangle, TrendingUp, Plus, Clock, CheckCircle2
+  BarChart3, AlertTriangle, TrendingUp, Plus, Clock, CheckCircle2, CalendarCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,7 +29,8 @@ function GestorDashboard() {
   const orcamento = getOrcamento(obra.id);
   const categorias = orcamento?.categorias || [];
   const totalPrevisto = categorias.reduce((s, c) => s + c.precoTotal, 0);
-  const totalRealizado = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoRealizado, 0);
+
+  const today = new Date();
 
   // Compute physical progress from cronograma categories
   const computePercentual = (cat: typeof categorias[0]) => {
@@ -44,9 +45,18 @@ function GestorDashboard() {
     return Math.round((done / totalPeso) * 100);
   };
 
-  const progressoFisico = categorias.length > 0
+  const andamentoReal = categorias.length > 0
     ? Math.round(categorias.reduce((s, c) => s + computePercentual(c), 0) / categorias.length)
     : obra.percentualAndamento;
+
+  // Andamento Planejado: % of etapas whose dataFimPrevista <= today
+  const andamentoPlanejado = (() => {
+    if (categorias.length === 0) return 0;
+    const withDates = categorias.filter(c => c.dataFimPrevista);
+    if (withDates.length === 0) return 0;
+    const shouldBeDone = withDates.filter(c => new Date(c.dataFimPrevista!) <= today).length;
+    return Math.round((shouldBeDone / categorias.length) * 100);
+  })();
 
   const materiaisObra = getMateriaisByObra(obra.id);
   const materiaisBaixo = materiaisObra.filter(m => m.estoqueAtual < m.estoqueMinimo).length;
@@ -94,15 +104,11 @@ function GestorDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground font-medium">Orçamento Realizado</p>
-                <p className="text-lg font-bold text-foreground">{formatCurrency(totalRealizado)}</p>
-                {totalPrevisto > 0 && (
-                  <p className={`text-[10px] font-medium ${totalRealizado <= totalPrevisto ? 'text-success' : 'text-destructive'}`}>
-                    {Math.round((totalRealizado / totalPrevisto) * 100)}% do planejado
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground font-medium">Andamento Planejado</p>
+                <p className="text-2xl font-bold text-foreground">{andamentoPlanejado}%</p>
+                <Progress value={andamentoPlanejado} className="h-1.5 mt-1 w-24" />
               </div>
-              <DollarSign className="h-8 w-8 text-success/30" />
+              <CalendarCheck className="h-8 w-8 text-primary/30" />
             </div>
           </CardContent>
         </Card>
@@ -110,11 +116,16 @@ function GestorDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground font-medium">Andamento Físico</p>
-                <p className="text-2xl font-bold text-foreground">{progressoFisico}%</p>
-                <Progress value={progressoFisico} className="h-1.5 mt-1 w-24" />
+                <p className="text-xs text-muted-foreground font-medium">Andamento Real</p>
+                <p className="text-2xl font-bold text-foreground">{andamentoReal}%</p>
+                <Progress value={andamentoReal} className="h-1.5 mt-1 w-24" />
+                {andamentoPlanejado > 0 && (
+                  <p className={`text-[10px] font-medium mt-0.5 ${andamentoReal >= andamentoPlanejado ? 'text-success' : 'text-destructive'}`}>
+                    {andamentoReal >= andamentoPlanejado ? 'No prazo' : `${andamentoPlanejado - andamentoReal}% atrasado`}
+                  </p>
+                )}
               </div>
-              <TrendingUp className="h-8 w-8 text-primary/30" />
+              <TrendingUp className="h-8 w-8 text-success/30" />
             </div>
           </CardContent>
         </Card>
@@ -149,10 +160,10 @@ function GestorDashboard() {
           <p className="text-sm text-muted-foreground mb-3">{obra.endereco}</p>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Progresso</span>
-              <span className="font-medium text-foreground">{progressoFisico}%</span>
+              <span className="text-muted-foreground">Progresso Real</span>
+              <span className="font-medium text-foreground">{andamentoReal}%</span>
             </div>
-            <Progress value={progressoFisico} className="h-2" />
+            <Progress value={andamentoReal} className="h-2" />
           </div>
           <div className="grid grid-cols-2 gap-4 mt-4">
             <div>
@@ -160,8 +171,8 @@ function GestorDashboard() {
               <p className="text-sm font-semibold text-foreground">{formatCurrency(totalPrevisto)}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Orçamento Realizado</p>
-              <p className="text-sm font-semibold text-foreground">{formatCurrency(totalRealizado)}</p>
+              <p className="text-xs text-muted-foreground">Planejado vs Real</p>
+              <p className="text-sm font-semibold text-foreground">{andamentoPlanejado}% → {andamentoReal}%</p>
             </div>
           </div>
         </CardContent>
