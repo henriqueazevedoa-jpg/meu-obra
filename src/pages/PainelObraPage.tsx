@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useObras } from '@/contexts/ObrasContext';
 import { useObraSelection } from '@/contexts/ObraSelectionContext';
 import { useOrcamento } from '@/contexts/OrcamentoContext';
@@ -19,7 +19,7 @@ import {
 import {
   TrendingUp, AlertTriangle, CheckCircle2, Package, BookOpen,
   Clock, CalendarDays, DollarSign, Users, Building2,
-  BarChart3
+  BarChart3, Plus
 } from 'lucide-react';
 import { format, parseISO, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -59,6 +59,7 @@ function computeStatus(cat: any): string {
 function GestorPainel() {
   const { obras } = useObras();
   const { selectedObraId, setSelectedObraId } = useObraSelection();
+  const navigate = useNavigate();
   const { getOrcamento } = useOrcamento();
   const { getMateriaisByObra } = useEstoque();
   const { getItensByObra: getCustoItensByObra } = useCustoReal();
@@ -74,10 +75,22 @@ function GestorPainel() {
       .then(({ data }) => { if (data) setDiarioRegistros(data as DiarioRow[]); });
   }, [obra?.id]);
 
+  const handleObraSelectChange = (value: string) => {
+    if (value === '__nova_obra__') {
+      navigate('/obras?nova=1');
+    } else {
+      setSelectedObraId(value);
+    }
+  };
+
   if (!obra) {
     return (
-      <div className="flex items-center justify-center py-20 text-muted-foreground text-sm">
-        Nenhuma obra cadastrada. Crie uma obra para começar.
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <p className="text-muted-foreground text-sm">Nenhuma obra cadastrada.</p>
+        <Button onClick={() => navigate('/obras?nova=1')}>
+          <Plus className="h-4 w-4 mr-2" />
+          Criar Nova Obra
+        </Button>
       </div>
     );
   }
@@ -140,7 +153,7 @@ function GestorPainel() {
           <p className="text-muted-foreground text-sm">Visão executiva consolidada</p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={selectedObraId} onValueChange={setSelectedObraId}>
+          <Select value={selectedObraId} onValueChange={handleObraSelectChange}>
             <SelectTrigger className="w-[280px] h-9 text-sm">
               <SelectValue placeholder="Selecionar obra..." />
             </SelectTrigger>
@@ -148,6 +161,9 @@ function GestorPainel() {
               {obras.map(o => (
                 <SelectItem key={o.id} value={o.id}>{o.codigo} - {o.nome}</SelectItem>
               ))}
+              <SelectItem value="__nova_obra__" className="text-primary font-medium">
+                <span className="flex items-center gap-2"><Plus className="h-3.5 w-3.5" /> Criar Nova Obra</span>
+              </SelectItem>
             </SelectContent>
           </Select>
           <PrintSectionPicker sections={printSections} onChange={setPrintSections} onPrint={handlePrint} />
