@@ -52,7 +52,6 @@ export default function ObrasPage() {
   );
 
   const filtered = obras
-    .filter(o => user?.obraIds.includes(o.id) || user?.role === 'gestor')
     .filter(o => !search || o.nome.toLowerCase().includes(search.toLowerCase()) || o.codigo.toLowerCase().includes(search.toLowerCase()))
     .filter(o => !statusFilter || o.status === statusFilter);
 
