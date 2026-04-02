@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Save, ArrowLeft, Copy } from 'lucide-react';
+import { Plus, Save, ArrowLeft, Copy, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/data/mockData';
 import CategoriaBlock from './CategoriaBlock';
