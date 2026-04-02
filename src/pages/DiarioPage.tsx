@@ -120,6 +120,7 @@ export default function DiarioPage() {
   const [filterMaterial, setFilterMaterial] = useState('_all');
   const [filterStatus, setFilterStatus] = useState('_all');
   const [filterProblemas, setFilterProblemas] = useState('_all');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const hasActiveFilters = filterEtapa !== '_all' || filterMaterial !== '_all' || filterStatus !== '_all' || filterProblemas !== '_all';
 
