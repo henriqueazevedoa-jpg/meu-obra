@@ -276,6 +276,7 @@ function GestorDashboard() {
                   {statusDiarioLabels[d.status as keyof typeof statusDiarioLabels]}
                 </Badge>
               </div>
+            ))}
           </CardContent>
         </Card>
       </div>
@@ -285,9 +286,14 @@ function GestorDashboard() {
 
 function FuncionarioDashboard() {
   const { obras } = useObras();
+  const { getOrcamento } = useOrcamento();
+  const { user } = useAuth();
   const obra = obras[0];
-  const meusRegistros = mockDiario.filter(d => d.usuarioId === 'u2');
-  const etapasAndamento = mockCronograma.filter(e => e.obraId === obra.id && e.status === 'em_andamento');
+  const diarioRegistros = useDiarioRegistros(obra?.id);
+  const meusRegistros = diarioRegistros.filter(d => d.user_id === user?.id);
+  const orcamento = obra ? getOrcamento(obra.id) : null;
+  const categorias = orcamento?.categorias || [];
+  const etapasAndamento = categorias.filter(c => c.statusCronograma === 'em_andamento');
 
   return (
     <div className="space-y-6 animate-fade-in">
