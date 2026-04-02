@@ -51,6 +51,22 @@ export interface CronogramaEtapa {
   observacoes: string;
 }
 
+export interface DiarioServico {
+  id: string;
+  descricao: string;
+  categoriaId?: string; // linked to OrcamentoCategoria
+  composicaoId?: string; // linked to OrcamentoComposicao
+  percentualAdicionado?: number; // % added to that etapa
+}
+
+export interface DiarioMaterialUsado {
+  id: string;
+  materialId: string;
+  materialNome: string;
+  unidade: string;
+  quantidade: number;
+}
+
 export interface DiarioRegistro {
   id: string;
   obraId: string;
@@ -60,6 +76,8 @@ export interface DiarioRegistro {
   clima: 'sol' | 'nublado' | 'chuva' | 'chuvoso_forte';
   trabalhadores: number;
   servicosExecutados: string;
+  servicos: DiarioServico[];
+  materiaisUtilizados: DiarioMaterialUsado[];
   observacoes: string;
   problemas: string;
   fotos: string[];
