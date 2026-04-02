@@ -1,12 +1,13 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Building2, LogOut } from 'lucide-react';
+import { User, Mail, Building2, LogOut, Crown } from 'lucide-react';
 import { useObras } from '@/contexts/ObrasContext';
 import { useNavigate } from 'react-router-dom';
 
-const roleLabels = { gestor: 'Gestor da Obra', funcionario: 'Funcionário / Equipe de Campo', cliente: 'Dono da Obra / Cliente' };
+const roleLabels: Record<string, string> = { admin: 'Admin da Plataforma', gestor: 'Gestor da Obra', funcionario: 'Funcionário / Equipe de Campo', cliente: 'Dono da Obra / Cliente' };
 
 export default function PerfilPage() {
   const { user, logout } = useAuth();
