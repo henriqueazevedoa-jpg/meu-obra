@@ -88,3 +88,15 @@
     box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
   }
 }
+
+@media print {
+  body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print\:hidden, nav, aside, header { display: none !important; }
+  .print\:block { display: block !important; }
+  .print\:shadow-none { box-shadow: none !important; }
+  .print\:border { border: 1px solid hsl(var(--border)) !important; }
+  .print\:break-inside-avoid { break-inside: avoid; }
+  .print\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  .print\:p-1 { padding: 0.25rem !important; }
+  main { padding: 0 !important; margin: 0 !important; }
+}
