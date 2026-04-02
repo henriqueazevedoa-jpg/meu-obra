@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
+import { useCompany } from './CompanyContext';
 import type { Obra } from '@/data/mockData';
 
 interface ObrasContextType {
