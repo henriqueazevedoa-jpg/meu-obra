@@ -59,7 +59,18 @@ const mobileClienteTabs = [
   { to: '/_more', label: 'Mais', icon: Menu },
 ];
 
-const roleLabels = { gestor: 'Gestor', funcionario: 'Funcionário', cliente: 'Cliente' };
+const adminLinks = [
+  { to: '/admin', label: 'Admin Plataforma', icon: Shield },
+  { to: '/painel', label: 'Painel da Obra', icon: LayoutDashboard },
+  { to: '/obras', label: 'Obras', icon: Building2 },
+  { to: '/orcamento', label: 'Orçamento', icon: DollarSign },
+  { to: '/custo-real', label: 'Custo Real', icon: Receipt },
+  { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
+  { to: '/diario', label: 'Diário', icon: BookOpen },
+  { to: '/estoque', label: 'Estoque', icon: Package },
+];
+
+const roleLabels: Record<string, string> = { admin: 'Admin', gestor: 'Gestor', funcionario: 'Funcionário', cliente: 'Cliente' };
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
