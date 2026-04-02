@@ -372,11 +372,14 @@ function FuncionarioDashboard() {
 
 function ClienteDashboard() {
   const { obras } = useObras();
+  const { getOrcamento } = useOrcamento();
   const obra = obras[0];
-  const totalPrevisto = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoTotalPrevisto, 0);
-  const totalRealizado = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoRealizado, 0);
-  const registrosAprovados = mockDiario.filter(d => d.obraId === obra.id && d.status === 'aprovado');
-  const proximasEtapas = mockCronograma.filter(e => e.obraId === obra.id && (e.status === 'em_andamento' || e.status === 'nao_iniciada')).slice(0, 3);
+  const diarioRegistros = useDiarioRegistros(obra?.id);
+  const orcamento = obra ? getOrcamento(obra.id) : null;
+  const categorias = orcamento?.categorias || [];
+  const totalPrevisto = categorias.reduce((s, c) => s + c.precoTotal, 0);
+  const registrosAprovados = diarioRegistros.filter(d => d.status === 'aprovado');
+  const proximasEtapas = categorias.filter(c => c.statusCronograma === 'em_andamento' || c.statusCronograma === 'nao_iniciada').slice(0, 3);
 
   return (
     <div className="space-y-6 animate-fade-in">
