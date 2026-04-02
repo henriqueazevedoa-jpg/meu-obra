@@ -2,7 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Building2, DollarSign, CalendarDays,
-  BookOpen, Package, User, LogOut, Menu, X, HardHat, Receipt
+  BookOpen, Package, User, LogOut, Menu, X, HardHat, Receipt, Shield
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
