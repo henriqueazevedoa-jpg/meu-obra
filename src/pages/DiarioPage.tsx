@@ -25,8 +25,9 @@ export default function DiarioPage() {
   const { obras } = useObras();
   const { orcamentos, getOrcamento, saveOrcamento } = useOrcamento();
   const { getMateriaisByObra, registrarMovimentacao } = useEstoque();
-  const obra = obras[0];
-  const [registros, setRegistros] = useState<DiarioRegistro[]>(mockDiario.filter(d => d.obraId === obra.id));
+  const [obraId, setObraId] = useState(obras[0]?.id || '');
+  const obra = obras.find(o => o.id === obraId) || obras[0];
+  const [registros, setRegistros] = useState<DiarioRegistro[]>(mockDiario);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -42,9 +43,10 @@ export default function DiarioPage() {
   const categorias = orcamento?.categorias || [];
   const materiaisObra = getMateriaisByObra(obra.id);
 
+  const obraRegistros = registros.filter(r => r.obraId === obra.id);
   const visibleRegistros = user?.role === 'cliente'
-    ? registros.filter(r => r.status === 'aprovado')
-    : registros;
+    ? obraRegistros.filter(r => r.status === 'aprovado')
+    : obraRegistros;
   const sortedRegistros = [...visibleRegistros].sort((a, b) => b.data.localeCompare(a.data));
 
   // --- Helpers for etapa progress ---
@@ -302,7 +304,18 @@ export default function DiarioPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Diário de Obra</h1>
-          <p className="text-muted-foreground text-sm">{obra.nome}</p>
+          <div className="mt-1">
+            <Select value={obraId} onValueChange={setObraId}>
+              <SelectTrigger className="w-[280px] h-8 text-sm">
+                <SelectValue placeholder="Selecionar obra..." />
+              </SelectTrigger>
+              <SelectContent>
+                {obras.map(o => (
+                  <SelectItem key={o.id} value={o.id}>{o.codigo} - {o.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         {canCreate && (
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
