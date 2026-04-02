@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useObraSelection } from '@/contexts/ObraSelectionContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useObras } from '@/contexts/ObrasContext';
 import { useOrcamento } from '@/contexts/OrcamentoContext';
