@@ -111,7 +111,7 @@ function GestorPainel() {
     ? Math.round(registrosAprovados.reduce((s, r) => s + r.trabalhadores, 0) / registrosAprovados.length)
     : 0;
 
-  const desvioOrcamento = 0; // Placeholder for future "Custo Realizado"
+  const desvioOrcamento = totalRealizado - totalPrevisto;
   const statusPrazo = andamentoReal >= andamentoPlanejado ? 'No prazo' : 'Atrasada';
 
   const handlePrint = () => window.print();
