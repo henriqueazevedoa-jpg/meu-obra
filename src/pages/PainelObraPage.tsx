@@ -491,6 +491,7 @@ function GestorPainel() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
             {[
               { to: '/orcamento', label: 'Orçamento', icon: DollarSign },
+              { to: '/custo-real', label: 'Custo Real', icon: BarChart3 },
               { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
               { to: '/diario', label: 'Diário', icon: BookOpen },
               { to: '/estoque', label: 'Estoque', icon: Package },
