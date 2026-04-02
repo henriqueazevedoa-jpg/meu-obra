@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      companies: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nome: string
+          plan_id: string | null
+          status: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome: string
+          plan_id?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome?: string
+          plan_id?: string | null
+          status?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companies_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custo_real_itens: {
         Row: {
           categoria_id: string
@@ -367,6 +411,7 @@ export type Database = {
         Row: {
           cliente: string | null
           codigo: string
+          company_id: string | null
           created_at: string
           data_inicio: string | null
           data_previsao_termino: string | null
@@ -382,6 +427,7 @@ export type Database = {
         Insert: {
           cliente?: string | null
           codigo?: string
+          company_id?: string | null
           created_at?: string
           data_inicio?: string | null
           data_previsao_termino?: string | null
@@ -397,6 +443,7 @@ export type Database = {
         Update: {
           cliente?: string | null
           codigo?: string
+          company_id?: string | null
           created_at?: string
           data_inicio?: string | null
           data_previsao_termino?: string | null
@@ -409,7 +456,15 @@ export type Database = {
           status?: Database["public"]["Enums"]["obra_status"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "obras_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orcamento_categorias: {
         Row: {
@@ -597,53 +652,233 @@ export type Database = {
           },
         ]
       }
+      plans: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          features: Json | null
+          id: string
+          ilimitado: boolean
+          limite_clientes: number
+          limite_funcionarios: number
+          limite_gestores: number
+          limite_obras: number
+          nome_comercial: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          features?: Json | null
+          id?: string
+          ilimitado?: boolean
+          limite_clientes?: number
+          limite_funcionarios?: number
+          limite_gestores?: number
+          limite_obras?: number
+          nome_comercial: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          features?: Json | null
+          id?: string
+          ilimitado?: boolean
+          limite_clientes?: number
+          limite_funcionarios?: number
+          limite_gestores?: number
+          limite_obras?: number
+          nome_comercial?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
+          company_id: string | null
           created_at: string
           email: string | null
           id: string
           nome: string
+          status: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
+          company_id?: string | null
           created_at?: string
           email?: string | null
           id?: string
           nome?: string
+          status?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
+          company_id?: string | null
           created_at?: string
           email?: string | null
           id?: string
           nome?: string
+          status?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_extras: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: string
+          quantidade: number | null
+          subscription_id: string
+          tipo: string
+          valor_unitario: number | null
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          quantidade?: number | null
+          subscription_id: string
+          tipo: string
+          valor_unitario?: number | null
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          quantidade?: number | null
+          subscription_id?: string
+          tipo?: string
+          valor_unitario?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_extras_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          ciclo: string
+          company_id: string
+          created_at: string
+          data_inicio: string
+          data_vencimento: string | null
+          gateway_id: string | null
+          id: string
+          moeda: string | null
+          observacoes: string | null
+          plan_id: string
+          status: string
+          trial_end: string | null
+          trial_start: string | null
+          updated_at: string
+          valor_base: number | null
+        }
+        Insert: {
+          ciclo?: string
+          company_id: string
+          created_at?: string
+          data_inicio?: string
+          data_vencimento?: string | null
+          gateway_id?: string | null
+          id?: string
+          moeda?: string | null
+          observacoes?: string | null
+          plan_id: string
+          status?: string
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+          valor_base?: number | null
+        }
+        Update: {
+          ciclo?: string
+          company_id?: string
+          created_at?: string
+          data_inicio?: string
+          data_vencimento?: string | null
+          gateway_id?: string | null
+          id?: string
+          moeda?: string | null
+          observacoes?: string | null
+          plan_id?: string
+          status?: string
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+          valor_base?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
+          company_id: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
+          company_id?: string | null
           id?: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
+          company_id?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -651,11 +886,17 @@ export type Database = {
     }
     Functions: {
       can_modify_obra: { Args: { _obra_id: string }; Returns: boolean }
+      check_plan_limit: {
+        Args: { _company_id: string; _resource: string }
+        Returns: Json
+      }
       get_obra_from_categoria: { Args: { _cat_id: string }; Returns: string }
       get_obra_from_composicao: { Args: { _comp_id: string }; Returns: string }
       get_obra_from_registro: { Args: { _reg_id: string }; Returns: string }
+      get_user_company_id: { Args: never; Returns: string }
       is_obra_gestor: { Args: { _obra_id: string }; Returns: boolean }
       is_obra_member: { Args: { _obra_id: string }; Returns: boolean }
+      is_platform_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "gestor" | "funcionario" | "cliente" | "admin"
