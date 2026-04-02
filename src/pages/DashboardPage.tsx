@@ -450,7 +450,7 @@ function ClienteDashboard() {
                 <p className="text-sm font-medium text-foreground">{formatDate(d.data)}</p>
                 <span className="text-xs text-muted-foreground">{climaLabels[d.clima as keyof typeof climaLabels]}</span>
               </div>
-              <p className="text-sm text-muted-foreground">{d.servicosExecutados}</p>
+              <p className="text-sm text-muted-foreground">{d.servicos_executados}</p>
               {d.problemas && <p className="text-xs text-destructive mt-1">⚠ {d.problemas}</p>}
             </div>
           ))}
