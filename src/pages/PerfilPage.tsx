@@ -52,6 +52,19 @@ export default function PerfilPage() {
               </div>
             </div>
           </div>
+
+          {company && (
+            <div className="flex items-start gap-3 text-sm pt-2 border-t">
+              <Crown className="h-4 w-4 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="font-medium text-foreground">{company.nome}</p>
+                <p className="text-xs text-muted-foreground">
+                  Plano {plan?.nome_comercial || '—'}
+                  {subscription && <> · {subscription.status === 'trial' ? 'Período de teste' : subscription.status === 'active' ? 'Ativo' : subscription.status}</>}
+                </p>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
