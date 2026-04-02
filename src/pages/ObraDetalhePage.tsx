@@ -232,9 +232,9 @@ export default function ObraDetalhePage() {
           <Progress value={progressoGeral} className="h-3" />
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
             <div><p className="text-xs text-muted-foreground">Previsto</p><p className="font-semibold text-foreground">{formatCurrency(totalPrevisto)}</p></div>
-            <div><p className="text-xs text-muted-foreground">Categorias</p><p className="font-semibold text-foreground">{categorias.length}</p></div>
-            <div><p className="text-xs text-muted-foreground">Etapas c/ Datas</p><p className="font-semibold text-foreground">{etapasComDatas.length}</p></div>
-            <div><p className="text-xs text-muted-foreground">Composições</p><p className="font-semibold text-foreground">{categorias.reduce((s, c) => s + c.composicoes.length, 0)}</p></div>
+            <div><p className="text-xs text-muted-foreground">Concluídas</p><p className="font-semibold text-success">{categorias.filter(c => c.statusCronograma === 'concluida').length}</p></div>
+            <div><p className="text-xs text-muted-foreground">Em Andamento</p><p className="font-semibold text-primary">{categorias.filter(c => c.statusCronograma === 'em_andamento' || c.statusCronograma === 'atrasada').length}</p></div>
+            <div><p className="text-xs text-muted-foreground">Não Iniciadas</p><p className="font-semibold text-muted-foreground">{categorias.filter(c => !c.statusCronograma || c.statusCronograma === 'nao_iniciada').length}</p></div>
           </div>
         </CardContent>
       </Card>
