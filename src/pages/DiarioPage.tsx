@@ -112,6 +112,18 @@ export default function DiarioPage() {
     setProblemas('');
     setServicos([]);
     setMateriaisUsados([]);
+    setEditingId(null);
+  };
+
+  const loadRegistroForEdit = (registro: DiarioRegistro) => {
+    setEditingId(registro.id);
+    setClima(registro.clima);
+    setTrabalhadores(String(registro.trabalhadores));
+    setObservacoes(registro.observacoes);
+    setProblemas(registro.problemas);
+    setServicos(registro.servicos?.length ? [...registro.servicos] : [{ id: `svc-${Date.now()}`, descricao: registro.servicosExecutados }]);
+    setMateriaisUsados(registro.materiaisUtilizados ? [...registro.materiaisUtilizados] : []);
+    setDialogOpen(true);
   };
 
   const handleSubmit = () => {
