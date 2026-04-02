@@ -193,7 +193,7 @@ function GestorDashboard() {
               if (c.dataFimPrevista && !c.dataFimReal && new Date() > new Date(c.dataFimPrevista)) return true;
               return false;
             }).map(c => (
-              <p key={c.id} className="text-sm text-foreground">📅 {c.nome} — etapa atrasada ({computePercentualDash(c)}% concluído)</p>
+              <p key={c.id} className="text-sm text-foreground">📅 {c.nome} — etapa atrasada ({computePercentual(c)}% concluído)</p>
             ))}
             {materiaisObra.filter(m => m.estoqueAtual < m.estoqueMinimo).map(m => (
               <p key={m.id} className="text-sm text-foreground">📦 {m.nome} — estoque em {m.estoqueAtual} {m.unidade} (mínimo: {m.estoqueMinimo})</p>
