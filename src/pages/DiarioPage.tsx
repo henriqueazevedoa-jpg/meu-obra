@@ -126,6 +126,7 @@ export default function DiarioPage() {
 
   const loadRegistroForEdit = (registro: DiarioRegistro) => {
     setEditingId(registro.id);
+    setDataRegistro(parseISO(registro.data));
     setClima(registro.clima);
     setTrabalhadores(String(registro.trabalhadores));
     setObservacoes(registro.observacoes);
