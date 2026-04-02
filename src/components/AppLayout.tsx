@@ -50,7 +50,7 @@ const mobileFuncionarioTabs = [
 ];
 
 const mobileClienteTabs = [
-  { to: '/dashboard', label: 'Início', icon: LayoutDashboard },
+  { to: '/painel', label: 'Painel', icon: LayoutDashboard },
   { to: '/orcamento', label: 'Orçamento', icon: DollarSign },
   { to: '/diario', label: 'Diário', icon: BookOpen },
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
