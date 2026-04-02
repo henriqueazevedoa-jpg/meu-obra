@@ -61,7 +61,7 @@ export default function OrcamentoEditor({ obraId, obraNome, onBack }: Props) {
     }
 
     const cat: OrcamentoCategoria = {
-      id: `cat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: crypto.randomUUID(),
       codigo, nome, precoTotal: 0, usaComposicoes: false, composicoes: [],
     };
     setCategorias(prev => [...prev, cat]);
