@@ -118,7 +118,18 @@ function GestorPainel() {
   const desvioOrcamento = totalRealizado - totalPrevisto;
   const statusPrazo = andamentoReal >= andamentoPlanejado ? 'No prazo' : 'Atrasada';
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => {
+    // Apply print section visibility via data attributes
+    document.querySelectorAll('[data-print-section]').forEach(el => {
+      const section = el.getAttribute('data-print-section') as keyof PrintSections;
+      if (section && !printSections[section]) {
+        (el as HTMLElement).classList.add('print-section-hidden');
+      } else {
+        (el as HTMLElement).classList.remove('print-section-hidden');
+      }
+    });
+    setTimeout(() => window.print(), 100);
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -139,9 +150,7 @@ function GestorPainel() {
               ))}
             </SelectContent>
           </Select>
-          <Button onClick={handlePrint} size="sm" className="gap-1.5">
-            <Printer className="h-4 w-4" /> <span className="hidden sm:inline">Imprimir Panorama Geral</span><span className="sm:hidden">Imprimir</span>
-          </Button>
+          <PrintSectionPicker sections={printSections} onChange={setPrintSections} onPrint={handlePrint} />
         </div>
       </div>
 
