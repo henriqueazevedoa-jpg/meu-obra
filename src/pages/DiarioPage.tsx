@@ -49,11 +49,33 @@ export default function DiarioPage() {
   const categorias = orcamento?.categorias || [];
   const materiaisObra = getMateriaisByObra(obra.id);
 
+  // Filters
+  const [filterEtapa, setFilterEtapa] = useState('_all');
+  const [filterMaterial, setFilterMaterial] = useState('_all');
+  const [filterStatus, setFilterStatus] = useState('_all');
+  const [filterProblemas, setFilterProblemas] = useState('_all');
+
   const obraRegistros = registros.filter(r => r.obraId === obra.id);
   const visibleRegistros = user?.role === 'cliente'
     ? obraRegistros.filter(r => r.status === 'aprovado')
     : obraRegistros;
-  const sortedRegistros = [...visibleRegistros].sort((a, b) => b.data.localeCompare(a.data));
+
+  const filteredRegistros = visibleRegistros.filter(r => {
+    if (filterStatus !== '_all' && r.status !== filterStatus) return false;
+    if (filterProblemas === 'com' && !r.problemas) return false;
+    if (filterProblemas === 'sem' && r.problemas) return false;
+    if (filterEtapa !== '_all') {
+      const hasEtapa = r.servicos?.some(s => s.categoriaId === filterEtapa || s.composicaoId === filterEtapa);
+      if (!hasEtapa) return false;
+    }
+    if (filterMaterial !== '_all') {
+      const hasMat = r.materiaisUtilizados?.some(m => m.materialId === filterMaterial);
+      if (!hasMat) return false;
+    }
+    return true;
+  });
+
+  const sortedRegistros = [...filteredRegistros].sort((a, b) => b.data.localeCompare(a.data));
 
   // --- Helpers for etapa progress ---
   const getEtapaPercentual = (categoriaId: string, composicaoId?: string): number => {
