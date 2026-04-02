@@ -84,14 +84,14 @@ function AppRoutes() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LoginRoute />} />
-        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/painel" element={<ProtectedRoute><PainelObraPage /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><PainelObraPage /></ProtectedRoute>} />
         <Route path="/obras" element={<ProtectedRoute><ObrasPage /></ProtectedRoute>} />
         <Route path="/obras/:id" element={<ProtectedRoute><ObraDetalhePage /></ProtectedRoute>} />
         <Route path="/orcamento" element={<ProtectedRoute><OrcamentoPage /></ProtectedRoute>} />
         <Route path="/cronograma" element={<ProtectedRoute><CronogramaPage /></ProtectedRoute>} />
         <Route path="/diario" element={<ProtectedRoute><DiarioPage /></ProtectedRoute>} />
         <Route path="/estoque" element={<ProtectedRoute><EstoquePage /></ProtectedRoute>} />
-        <Route path="/relatorios" element={<ProtectedRoute><RelatoriosPage /></ProtectedRoute>} />
         <Route path="/perfil" element={<ProtectedRoute><PerfilPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
