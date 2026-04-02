@@ -38,8 +38,8 @@ const clienteLinks = [
 const mobileGestorTabs = [
   { to: '/dashboard', label: 'Início', icon: LayoutDashboard },
   { to: '/diario', label: 'Diário', icon: BookOpen },
+  { to: '/orcamento', label: 'Orçamento', icon: DollarSign },
   { to: '/estoque', label: 'Estoque', icon: Package },
-  { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
   { to: '/_more', label: 'Mais', icon: Menu },
 ];
 
@@ -53,9 +53,9 @@ const mobileFuncionarioTabs = [
 
 const mobileClienteTabs = [
   { to: '/dashboard', label: 'Início', icon: LayoutDashboard },
+  { to: '/orcamento', label: 'Orçamento', icon: DollarSign },
   { to: '/diario', label: 'Diário', icon: BookOpen },
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
-  { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
   { to: '/_more', label: 'Mais', icon: Menu },
 ];
 
