@@ -23,10 +23,13 @@ interface Props {
   getSugestaoInsumos: (categoriaNome: string) => InsumoTemplate[];
   generateComposicaoCodigo: (catCode: string, existing: string[]) => string;
   generateSubitemCodigo: (compCode: string, existing: string[]) => string;
+  forceExpanded?: boolean;
 }
 
-export default function CategoriaBlock({ categoria, unidades, onChange, onRemove, getSugestaoInsumos, generateComposicaoCodigo, generateSubitemCodigo }: Props) {
-  const [expanded, setExpanded] = useState(true);
+export default function CategoriaBlock({ categoria, unidades, onChange, onRemove, getSugestaoInsumos, generateComposicaoCodigo, generateSubitemCodigo, forceExpanded }: Props) {
+  const [localExpanded, setLocalExpanded] = useState(true);
+  const expanded = forceExpanded !== undefined ? forceExpanded : localExpanded;
+  const setExpanded = (v: boolean) => setLocalExpanded(v);
   const [addMode, setAddMode] = useState<'manual' | 'sugestao'>('sugestao');
   const [selectedInsumo, setSelectedInsumo] = useState('');
 

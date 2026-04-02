@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Save, ArrowLeft, Copy } from 'lucide-react';
+import { Plus, Save, ArrowLeft, Copy, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/data/mockData';
 import CategoriaBlock from './CategoriaBlock';
@@ -27,6 +27,7 @@ export default function OrcamentoEditor({ obraId, obraNome, onBack }: Props) {
   const [customCatName, setCustomCatName] = useState('');
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importObraId, setImportObraId] = useState('');
+  const [allExpanded, setAllExpanded] = useState<boolean | undefined>(undefined);
 
   const unidades = getUnidadesUsadas();
 
@@ -175,7 +176,17 @@ export default function OrcamentoEditor({ obraId, obraNome, onBack }: Props) {
         )}
       </div>
 
-      {/* Categories */}
+      {/* Expand/Collapse all + Categories */}
+      {categorias.length > 0 && (
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => setAllExpanded(true)}>
+            <ChevronDown className="h-3 w-3 mr-1" /> Abrir Todas
+          </Button>
+          <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => setAllExpanded(false)}>
+            <ChevronRight className="h-3 w-3 mr-1" /> Fechar Todas
+          </Button>
+        </div>
+      )}
       <div className="space-y-4">
         {categorias.map((cat, idx) => (
           <CategoriaBlock
@@ -187,6 +198,7 @@ export default function OrcamentoEditor({ obraId, obraNome, onBack }: Props) {
             getSugestaoInsumos={getSugestaoInsumos}
             generateComposicaoCodigo={generateComposicaoCodigo}
             generateSubitemCodigo={generateSubitemCodigo}
+            forceExpanded={allExpanded}
           />
         ))}
       </div>

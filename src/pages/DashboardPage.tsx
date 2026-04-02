@@ -1,8 +1,12 @@
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useObras } from '@/contexts/ObrasContext';
+import { useOrcamento } from '@/contexts/OrcamentoContext';
+import { useEstoque } from '@/contexts/EstoqueContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Link } from 'react-router-dom';
 import {
   Building2, DollarSign, CalendarDays, BookOpen, Package,
@@ -17,19 +21,60 @@ import {
 
 function GestorDashboard() {
   const { obras } = useObras();
-  const obra = obras[0];
-  const totalPrevisto = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoTotalPrevisto, 0);
+  const { getOrcamento } = useOrcamento();
+  const { getMateriaisByObra } = useEstoque();
+  const [selectedObraId, setSelectedObraId] = useState(obras[0]?.id || '');
+  const obra = obras.find(o => o.id === selectedObraId) || obras[0];
+
+  const orcamento = getOrcamento(obra.id);
+  const categorias = orcamento?.categorias || [];
+  const totalPrevisto = categorias.reduce((s, c) => s + c.precoTotal, 0);
   const totalRealizado = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoRealizado, 0);
-  const etapasAtrasadas = mockCronograma.filter(e => e.obraId === obra.id && e.status === 'atrasada').length;
-  const etapasAndamento = mockCronograma.filter(e => e.obraId === obra.id && e.status === 'em_andamento').length;
-  const materiaisBaixo = mockMateriais.filter(m => m.obraId === obra.id && m.estoqueAtual < m.estoqueMinimo).length;
+
+  // Compute physical progress from cronograma categories
+  const computePercentual = (cat: typeof categorias[0]) => {
+    if (cat.percentualCronograma != null) return cat.percentualCronograma;
+    if (!cat.usaComposicoes || cat.composicoes.length === 0) return 0;
+    const totalPeso = cat.composicoes.reduce((s, c) => s + (c.pesoCronograma ?? 0), 0);
+    if (totalPeso === 0) {
+      const done = cat.composicoes.filter(c => c.concluida).length;
+      return Math.round((done / cat.composicoes.length) * 100);
+    }
+    const done = cat.composicoes.filter(c => c.concluida).reduce((s, c) => s + (c.pesoCronograma ?? 0), 0);
+    return Math.round((done / totalPeso) * 100);
+  };
+
+  const progressoFisico = categorias.length > 0
+    ? Math.round(categorias.reduce((s, c) => s + computePercentual(c), 0) / categorias.length)
+    : obra.percentualAndamento;
+
+  const materiaisObra = getMateriaisByObra(obra.id);
+  const materiaisBaixo = materiaisObra.filter(m => m.estoqueAtual < m.estoqueMinimo).length;
+  const etapasAtrasadas = categorias.filter(c => {
+    if (c.statusCronograma === 'atrasada') return true;
+    if (c.dataFimPrevista && !c.dataFimReal && new Date() > new Date(c.dataFimPrevista)) return true;
+    return false;
+  }).length;
   const registrosPendentes = mockDiario.filter(d => d.obraId === obra.id && d.status === 'pendente').length;
+  const totalAlertas = materiaisBaixo + registrosPendentes + etapasAtrasadas;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground text-sm">Visão geral das suas obras</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground text-sm">Visão geral das suas obras</p>
+        </div>
+        <Select value={selectedObraId} onValueChange={setSelectedObraId}>
+          <SelectTrigger className="w-[280px] h-9 text-sm">
+            <SelectValue placeholder="Selecionar obra em destaque..." />
+          </SelectTrigger>
+          <SelectContent>
+            {obras.map(o => (
+              <SelectItem key={o.id} value={o.id}>{o.codigo} - {o.nome}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Quick stats */}
@@ -38,10 +83,10 @@ function GestorDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-muted-foreground font-medium">Obras Ativas</p>
-                <p className="text-2xl font-bold text-foreground">{obras.filter(o => o.status === 'em_andamento').length}</p>
+                <p className="text-xs text-muted-foreground font-medium">Orçamento Planejado</p>
+                <p className="text-lg font-bold text-foreground">{formatCurrency(totalPrevisto)}</p>
               </div>
-              <Building2 className="h-8 w-8 text-primary/30" />
+              <DollarSign className="h-8 w-8 text-primary/30" />
             </div>
           </CardContent>
         </Card>
@@ -50,7 +95,12 @@ function GestorDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground font-medium">Orçamento Realizado</p>
-                <p className="text-2xl font-bold text-foreground">{Math.round((totalRealizado / totalPrevisto) * 100)}%</p>
+                <p className="text-lg font-bold text-foreground">{formatCurrency(totalRealizado)}</p>
+                {totalPrevisto > 0 && (
+                  <p className={`text-[10px] font-medium ${totalRealizado <= totalPrevisto ? 'text-success' : 'text-destructive'}`}>
+                    {Math.round((totalRealizado / totalPrevisto) * 100)}% do planejado
+                  </p>
+                )}
               </div>
               <DollarSign className="h-8 w-8 text-success/30" />
             </div>
@@ -61,7 +111,8 @@ function GestorDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground font-medium">Andamento Físico</p>
-                <p className="text-2xl font-bold text-foreground">{obra.percentualAndamento}%</p>
+                <p className="text-2xl font-bold text-foreground">{progressoFisico}%</p>
+                <Progress value={progressoFisico} className="h-1.5 mt-1 w-24" />
               </div>
               <TrendingUp className="h-8 w-8 text-primary/30" />
             </div>
@@ -72,7 +123,12 @@ function GestorDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground font-medium">Alertas</p>
-                <p className="text-2xl font-bold text-foreground">{materiaisBaixo + registrosPendentes + etapasAtrasadas}</p>
+                <p className={`text-2xl font-bold ${totalAlertas > 0 ? 'text-warning' : 'text-foreground'}`}>{totalAlertas}</p>
+                {totalAlertas > 0 && (
+                  <p className="text-[10px] text-muted-foreground">
+                    {[etapasAtrasadas > 0 && `${etapasAtrasadas} atraso(s)`, materiaisBaixo > 0 && `${materiaisBaixo} estoque`, registrosPendentes > 0 && `${registrosPendentes} pendente(s)`].filter(Boolean).join(', ')}
+                  </p>
+                )}
               </div>
               <AlertTriangle className="h-8 w-8 text-warning/30" />
             </div>
@@ -94,9 +150,9 @@ function GestorDashboard() {
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Progresso</span>
-              <span className="font-medium text-foreground">{obra.percentualAndamento}%</span>
+              <span className="font-medium text-foreground">{progressoFisico}%</span>
             </div>
-            <Progress value={obra.percentualAndamento} className="h-2" />
+            <Progress value={progressoFisico} className="h-2" />
           </div>
           <div className="grid grid-cols-2 gap-4 mt-4">
             <div>

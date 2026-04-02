@@ -49,11 +49,33 @@ export default function DiarioPage() {
   const categorias = orcamento?.categorias || [];
   const materiaisObra = getMateriaisByObra(obra.id);
 
+  // Filters
+  const [filterEtapa, setFilterEtapa] = useState('_all');
+  const [filterMaterial, setFilterMaterial] = useState('_all');
+  const [filterStatus, setFilterStatus] = useState('_all');
+  const [filterProblemas, setFilterProblemas] = useState('_all');
+
   const obraRegistros = registros.filter(r => r.obraId === obra.id);
   const visibleRegistros = user?.role === 'cliente'
     ? obraRegistros.filter(r => r.status === 'aprovado')
     : obraRegistros;
-  const sortedRegistros = [...visibleRegistros].sort((a, b) => b.data.localeCompare(a.data));
+
+  const filteredRegistros = visibleRegistros.filter(r => {
+    if (filterStatus !== '_all' && r.status !== filterStatus) return false;
+    if (filterProblemas === 'com' && !r.problemas) return false;
+    if (filterProblemas === 'sem' && r.problemas) return false;
+    if (filterEtapa !== '_all') {
+      const hasEtapa = r.servicos?.some(s => s.categoriaId === filterEtapa || s.composicaoId === filterEtapa);
+      if (!hasEtapa) return false;
+    }
+    if (filterMaterial !== '_all') {
+      const hasMat = r.materiaisUtilizados?.some(m => m.materialId === filterMaterial);
+      if (!hasMat) return false;
+    }
+    return true;
+  });
+
+  const sortedRegistros = [...filteredRegistros].sort((a, b) => b.data.localeCompare(a.data));
 
   // --- Helpers for etapa progress ---
   const getEtapaPercentual = (categoriaId: string, composicaoId?: string): number => {
@@ -576,6 +598,63 @@ export default function DiarioPage() {
           </Dialog>
         )}
       </div>
+
+      {/* Filters */}
+      <Card className="shadow-card">
+        <CardContent className="p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-muted-foreground">Filtros:</span>
+            <Select value={filterEtapa} onValueChange={setFilterEtapa}>
+              <SelectTrigger className="w-[180px] h-8 text-xs">
+                <SelectValue placeholder="Etapa..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_all">Todas as etapas</SelectItem>
+                {categorias.map(cat => (
+                  <SelectItem key={cat.id} value={cat.id}>{cat.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterMaterial} onValueChange={setFilterMaterial}>
+              <SelectTrigger className="w-[180px] h-8 text-xs">
+                <SelectValue placeholder="Material..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_all">Todos os materiais</SelectItem>
+                {materiaisObra.map(m => (
+                  <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-[150px] h-8 text-xs">
+                <SelectValue placeholder="Status..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_all">Todos os status</SelectItem>
+                <SelectItem value="aprovado">✅ Aprovado</SelectItem>
+                <SelectItem value="pendente">⏳ Pendente</SelectItem>
+                <SelectItem value="rejeitado">❌ Reprovado</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterProblemas} onValueChange={setFilterProblemas}>
+              <SelectTrigger className="w-[150px] h-8 text-xs">
+                <SelectValue placeholder="Problemas..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="_all">Todos</SelectItem>
+                <SelectItem value="com">Com problemas</SelectItem>
+                <SelectItem value="sem">Sem problemas</SelectItem>
+              </SelectContent>
+            </Select>
+            {(filterEtapa !== '_all' || filterMaterial !== '_all' || filterStatus !== '_all' || filterProblemas !== '_all') && (
+              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setFilterEtapa('_all'); setFilterMaterial('_all'); setFilterStatus('_all'); setFilterProblemas('_all'); }}>
+                Limpar filtros
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Timeline */}
       <div className="space-y-4">
