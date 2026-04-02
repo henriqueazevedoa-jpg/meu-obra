@@ -176,7 +176,17 @@ export default function OrcamentoEditor({ obraId, obraNome, onBack }: Props) {
         )}
       </div>
 
-      {/* Categories */}
+      {/* Expand/Collapse all + Categories */}
+      {categorias.length > 0 && (
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => setAllExpanded(true)}>
+            <ChevronDown className="h-3 w-3 mr-1" /> Abrir Todas
+          </Button>
+          <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => setAllExpanded(false)}>
+            <ChevronRight className="h-3 w-3 mr-1" /> Fechar Todas
+          </Button>
+        </div>
+      )}
       <div className="space-y-4">
         {categorias.map((cat, idx) => (
           <CategoriaBlock
@@ -188,6 +198,7 @@ export default function OrcamentoEditor({ obraId, obraNome, onBack }: Props) {
             getSugestaoInsumos={getSugestaoInsumos}
             generateComposicaoCodigo={generateComposicaoCodigo}
             generateSubitemCodigo={generateSubitemCodigo}
+            forceExpanded={allExpanded}
           />
         ))}
       </div>
