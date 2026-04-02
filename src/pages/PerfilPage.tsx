@@ -11,9 +11,9 @@ const roleLabels: Record<string, string> = { admin: 'Admin da Plataforma', gesto
 
 export default function PerfilPage() {
   const { user, logout } = useAuth();
+  const { company, plan, subscription } = useCompany();
   const navigate = useNavigate();
   if (!user) return null;
-
   const { obras } = useObras();
 
   const handleLogout = async () => {
