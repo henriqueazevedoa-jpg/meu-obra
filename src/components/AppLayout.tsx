@@ -34,7 +34,7 @@ const clienteLinks = [
 
 // Bottom tab bar: show most-used items for field work
 const mobileGestorTabs = [
-  { to: '/dashboard', label: 'Início', icon: LayoutDashboard },
+  { to: '/painel', label: 'Painel', icon: LayoutDashboard },
   { to: '/diario', label: 'Diário', icon: BookOpen },
   { to: '/orcamento', label: 'Orçamento', icon: DollarSign },
   { to: '/estoque', label: 'Estoque', icon: Package },
