@@ -340,9 +340,9 @@ function FuncionarioDashboard() {
             <div key={e.id} className="space-y-1">
               <div className="flex justify-between text-sm">
                 <span className="font-medium text-foreground">{e.nome}</span>
-                <span className="text-muted-foreground">{e.percentual}%</span>
+                <span className="text-muted-foreground">{e.percentualCronograma || 0}%</span>
               </div>
-              <Progress value={e.percentual} className="h-1.5" />
+              <Progress value={e.percentualCronograma || 0} className="h-1.5" />
             </div>
           ))}
         </CardContent>
