@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ObrasProvider } from "@/contexts/ObrasContext";
 import { OrcamentoProvider } from "@/contexts/OrcamentoContext";
 import { EstoqueProvider } from "@/contexts/EstoqueContext";
+import { CustoRealProvider } from "@/contexts/CustoRealContext";
 import { ObraSelectionProvider } from "@/contexts/ObraSelectionContext";
 import AppLayout from "@/components/AppLayout";
 import LoginPage from "@/pages/LoginPage";
@@ -14,6 +15,7 @@ import LoginPage from "@/pages/LoginPage";
 import ObrasPage from "@/pages/ObrasPage";
 import ObraDetalhePage from "@/pages/ObraDetalhePage";
 import OrcamentoPage from "@/pages/OrcamentoPage";
+import CustoRealPage from "@/pages/CustoRealPage";
 import CronogramaPage from "@/pages/CronogramaPage";
 import DiarioPage from "@/pages/DiarioPage";
 import EstoquePage from "@/pages/EstoquePage";
@@ -69,7 +71,9 @@ function AppProviders({ children }: { children: React.ReactNode }) {
           <ObrasProvider>
             <OrcamentoProvider>
               <EstoqueProvider>
-                <ObraSelectionProvider>{children}</ObraSelectionProvider>
+                <CustoRealProvider>
+                  <ObraSelectionProvider>{children}</ObraSelectionProvider>
+                </CustoRealProvider>
               </EstoqueProvider>
             </OrcamentoProvider>
           </ObrasProvider>
@@ -89,6 +93,7 @@ function AppRoutes() {
         <Route path="/obras" element={<ProtectedRoute><ObrasPage /></ProtectedRoute>} />
         <Route path="/obras/:id" element={<ProtectedRoute><ObraDetalhePage /></ProtectedRoute>} />
         <Route path="/orcamento" element={<ProtectedRoute><OrcamentoPage /></ProtectedRoute>} />
+        <Route path="/custo-real" element={<ProtectedRoute><CustoRealPage /></ProtectedRoute>} />
         <Route path="/cronograma" element={<ProtectedRoute><CronogramaPage /></ProtectedRoute>} />
         <Route path="/diario" element={<ProtectedRoute><DiarioPage /></ProtectedRoute>} />
         <Route path="/estoque" element={<ProtectedRoute><EstoquePage /></ProtectedRoute>} />

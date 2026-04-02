@@ -11,6 +11,7 @@ const gestorLinks = [
   { to: '/painel', label: 'Painel da Obra', icon: LayoutDashboard },
   { to: '/obras', label: 'Obras', icon: Building2 },
   { to: '/orcamento', label: 'Orçamento', icon: DollarSign },
+  { to: '/custo-real', label: 'Custo Real', icon: Receipt },
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
   { to: '/diario', label: 'Diário', icon: BookOpen },
   { to: '/estoque', label: 'Estoque', icon: Package },
