@@ -511,7 +511,7 @@ export default function DiarioPage() {
                 </div>
 
                 <Button onClick={handleSubmit} className="w-full" disabled={servicos.filter(s => s.descricao.trim()).length === 0}>
-                  Salvar Registro
+                  {editingId ? 'Salvar Alterações' : 'Salvar Registro'}
                 </Button>
               </div>
             </DialogContent>
