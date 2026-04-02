@@ -759,10 +759,15 @@ ${toPrint.map(r => {
       ) : (
         <div className="space-y-3">
           {sortedRegistros.map(registro => (
-            <Card key={registro.id} className="shadow-card">
+            <Card key={registro.id} className={cn("shadow-card", selectedIds.has(registro.id) && "ring-2 ring-primary/30")}>
               <CardContent className="p-3 sm:p-5">
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2 min-w-0">
+                    <Checkbox
+                      checked={selectedIds.has(registro.id)}
+                      onCheckedChange={() => toggleSelect(registro.id)}
+                      className="mt-0.5 shrink-0"
+                    />
                     {statusIcons[registro.status]}
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
