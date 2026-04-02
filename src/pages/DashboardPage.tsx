@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Link } from 'react-router-dom';
 import {
   Building2, DollarSign, CalendarDays, BookOpen, Package,
-  BarChart3, AlertTriangle, TrendingUp, Plus, Clock, CheckCircle2
+  BarChart3, AlertTriangle, TrendingUp, Plus, Clock, CheckCircle2, CalendarCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
