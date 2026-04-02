@@ -99,7 +99,7 @@ function GestorDashboard() {
     if (c.dataFimPrevista && !c.dataFimReal && new Date() > new Date(c.dataFimPrevista)) return true;
     return false;
   }).length;
-  const registrosPendentes = mockDiario.filter(d => d.obraId === obra.id && d.status === 'pendente').length;
+  const registrosPendentes = diarioRegistros.filter(d => d.status === 'pendente').length;
   const totalAlertas = materiaisBaixo + registrosPendentes + etapasAtrasadas;
 
   return (
