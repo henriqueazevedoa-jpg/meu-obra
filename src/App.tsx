@@ -10,7 +10,7 @@ import { EstoqueProvider } from "@/contexts/EstoqueContext";
 import { ObraSelectionProvider } from "@/contexts/ObraSelectionContext";
 import AppLayout from "@/components/AppLayout";
 import LoginPage from "@/pages/LoginPage";
-import DashboardPage from "@/pages/DashboardPage";
+
 import ObrasPage from "@/pages/ObrasPage";
 import ObraDetalhePage from "@/pages/ObraDetalhePage";
 import OrcamentoPage from "@/pages/OrcamentoPage";
