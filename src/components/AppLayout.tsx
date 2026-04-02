@@ -2,7 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Building2, DollarSign, CalendarDays,
-  BookOpen, Package, User, LogOut, Menu, X, HardHat
+  BookOpen, Package, User, LogOut, Menu, X, HardHat, Receipt
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,7 @@ const gestorLinks = [
   { to: '/painel', label: 'Painel da Obra', icon: LayoutDashboard },
   { to: '/obras', label: 'Obras', icon: Building2 },
   { to: '/orcamento', label: 'Orçamento', icon: DollarSign },
+  { to: '/custo-real', label: 'Custo Real', icon: Receipt },
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
   { to: '/diario', label: 'Diário', icon: BookOpen },
   { to: '/estoque', label: 'Estoque', icon: Package },
@@ -28,6 +29,7 @@ const clienteLinks = [
   { to: '/painel', label: 'Painel da Obra', icon: LayoutDashboard },
   { to: '/obras', label: 'Obras', icon: Building2 },
   { to: '/orcamento', label: 'Orçamento', icon: DollarSign },
+  { to: '/custo-real', label: 'Custo Real', icon: Receipt },
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
   { to: '/diario', label: 'Diário', icon: BookOpen },
 ];
@@ -122,7 +124,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Mobile Top Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-12 bg-sidebar z-30 flex items-center justify-between px-4 safe-area-top">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-12 bg-sidebar z-30 flex items-center justify-between px-4 safe-area-top print:hidden" data-print-hide>
         <div className="flex items-center gap-2">
           <HardHat className="h-5 w-5 text-sidebar-primary" />
           <span className="text-sm font-bold text-sidebar-primary-foreground">ObraFácil</span>

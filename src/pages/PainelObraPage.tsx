@@ -4,6 +4,7 @@ import { useObras } from '@/contexts/ObrasContext';
 import { useObraSelection } from '@/contexts/ObraSelectionContext';
 import { useOrcamento } from '@/contexts/OrcamentoContext';
 import { useEstoque } from '@/contexts/EstoqueContext';
+import { useCustoReal } from '@/contexts/CustoRealContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,6 +58,7 @@ function GestorPainel() {
   const { selectedObraId, setSelectedObraId } = useObraSelection();
   const { getOrcamento } = useOrcamento();
   const { getMateriaisByObra } = useEstoque();
+  const { getItensByObra: getCustoItensByObra } = useCustoReal();
   const [diarioRegistros, setDiarioRegistros] = useState<DiarioRow[]>([]);
 
   const obra = obras.find(o => o.id === selectedObraId) || obras[0];
@@ -79,6 +81,8 @@ function GestorPainel() {
   const orcamento = getOrcamento(obra.id);
   const categorias = orcamento?.categorias || [];
   const totalPrevisto = categorias.reduce((s, c) => s + c.precoTotal, 0);
+  const custoItens = getCustoItensByObra(obra.id);
+  const totalRealizado = custoItens.reduce((s, i) => s + i.precoTotal, 0);
   const materiaisObra = getMateriaisByObra(obra.id);
   const materiaisBaixo = materiaisObra.filter(m => m.estoqueAtual < m.estoqueMinimo);
   const registrosPendentes = diarioRegistros.filter(d => d.status === 'pendente');
@@ -107,7 +111,7 @@ function GestorPainel() {
     ? Math.round(registrosAprovados.reduce((s, r) => s + r.trabalhadores, 0) / registrosAprovados.length)
     : 0;
 
-  const desvioOrcamento = 0; // Placeholder for future "Custo Realizado"
+  const desvioOrcamento = totalRealizado - totalPrevisto;
   const statusPrazo = andamentoReal >= andamentoPlanejado ? 'No prazo' : 'Atrasada';
 
   const handlePrint = () => window.print();
@@ -204,11 +208,15 @@ function GestorPainel() {
         <Card className="shadow-card print:shadow-none print:border">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-1">
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <DollarSign className="h-4 w-4 text-success" />
               <p className="text-xs text-muted-foreground font-medium">Custo Realizado</p>
             </div>
-            <p className="text-lg font-bold text-foreground text-muted-foreground/50">—</p>
-            <p className="text-[10px] text-muted-foreground">Em breve</p>
+            <p className="text-lg font-bold text-foreground">{custoItens.length > 0 ? formatCurrency(totalRealizado) : '—'}</p>
+            {custoItens.length > 0 && desvioOrcamento !== 0 && (
+              <p className={`text-[10px] font-medium ${desvioOrcamento > 0 ? 'text-destructive' : 'text-success'}`}>
+                {desvioOrcamento >= 0 ? '+' : ''}{formatCurrency(desvioOrcamento)}
+              </p>
+            )}
           </CardContent>
         </Card>
         <Card className="shadow-card print:shadow-none print:border">
@@ -483,6 +491,7 @@ function GestorPainel() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
             {[
               { to: '/orcamento', label: 'Orçamento', icon: DollarSign },
+              { to: '/custo-real', label: 'Custo Real', icon: BarChart3 },
               { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
               { to: '/diario', label: 'Diário', icon: BookOpen },
               { to: '/estoque', label: 'Estoque', icon: Package },

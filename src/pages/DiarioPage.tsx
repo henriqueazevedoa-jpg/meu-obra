@@ -138,7 +138,11 @@ export default function DiarioPage() {
       if (!hasEtapa) return false;
     }
     if (filterMaterial !== '_all') {
-      const hasMat = r.materiaisUtilizados?.some(m => m.materialId === filterMaterial);
+      const targetMat = materiaisObra.find(m => m.id === filterMaterial);
+      const hasMat = r.materiaisUtilizados?.some(m => 
+        m.materialId === filterMaterial || 
+        (targetMat && m.materialNome === targetMat.nome)
+      );
       if (!hasMat) return false;
     }
     return true;
