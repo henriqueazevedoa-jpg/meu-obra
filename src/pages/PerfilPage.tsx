@@ -13,7 +13,7 @@ export default function PerfilPage() {
   const navigate = useNavigate();
   if (!user) return null;
 
-  const obras = mockObras.filter(o => user.obraIds.includes(o.id));
+  const { obras } = useObras();
 
   const handleLogout = () => {
     logout();
