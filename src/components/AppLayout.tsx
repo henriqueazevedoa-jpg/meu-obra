@@ -42,7 +42,7 @@ const mobileGestorTabs = [
 ];
 
 const mobileFuncionarioTabs = [
-  { to: '/dashboard', label: 'Início', icon: LayoutDashboard },
+  { to: '/painel', label: 'Painel', icon: LayoutDashboard },
   { to: '/diario', label: 'Diário', icon: BookOpen },
   { to: '/estoque', label: 'Estoque', icon: Package },
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
