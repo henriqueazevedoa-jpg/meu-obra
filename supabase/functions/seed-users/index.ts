@@ -8,6 +8,7 @@ Deno.serve(async (req) => {
   });
 
   const users = [
+    { email: "gestor@teste.com", password: "123456", nome: "Henrique Gestor", role: "gestor" as const },
     { email: "funcionario@teste.com", password: "123456", nome: "José Silva", role: "funcionario" as const },
     { email: "cliente@teste.com", password: "123456", nome: "Roberto Mendes", role: "cliente" as const },
   ];
