@@ -50,6 +50,7 @@ function GestorDashboard() {
   const { getMateriaisByObra } = useEstoque();
   const { selectedObraId, setSelectedObraId } = useObraSelection();
   const obra = obras.find(o => o.id === selectedObraId) || obras[0];
+  const diarioRegistros = useDiarioRegistros(obra?.id);
 
   if (!obra) {
     return (
