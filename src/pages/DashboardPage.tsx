@@ -266,7 +266,17 @@ function GestorDashboard() {
             <CardTitle className="text-base">Diário Recente</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {mockDiario.slice(0, 3).map(d => (
+            {diarioRegistros.slice(0, 3).map(d => (
+              <div key={d.id} className="flex items-start justify-between border-b border-border pb-2 last:border-0">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{formatDate(d.data)} · {climaLabels[d.clima as keyof typeof climaLabels]}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-1">{d.servicos_executados}</p>
+                </div>
+                <Badge variant={d.status === 'aprovado' ? 'default' : 'secondary'} className={d.status === 'aprovado' ? 'bg-success/10 text-success border-0' : 'bg-warning/10 text-warning border-0'}>
+                  {statusDiarioLabels[d.status as keyof typeof statusDiarioLabels]}
+                </Badge>
+              </div>
+            ))}
               <div key={d.id} className="flex items-start justify-between border-b border-border pb-2 last:border-0">
                 <div>
                   <p className="text-sm font-medium text-foreground">{formatDate(d.data)} · {climaLabels[d.clima]}</p>
