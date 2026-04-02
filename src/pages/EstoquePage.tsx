@@ -11,19 +11,33 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDate } from '@/data/mockData';
-import { Package, AlertTriangle, ArrowDownCircle, ArrowUpCircle, Search } from 'lucide-react';
+import { Package, AlertTriangle, ArrowDownCircle, ArrowUpCircle, Search, Plus, Check, X } from 'lucide-react';
+
+const categoriasEstoque = [
+  'Cimento', 'Agregados', 'Aço', 'Alvenaria', 'Hidráulica', 'Elétrica',
+  'Pintura', 'Madeira', 'Impermeabilização', 'Ferragens', 'EPI', 'Outros',
+];
 
 export default function EstoquePage() {
   const { user, hasPermission } = useAuth();
   const { obras } = useObras();
-  const { getMateriaisByObra, getMovimentacoesByObra, registrarMovimentacao } = useEstoque();
-  const obra = obras[0];
+  const { getMateriaisByObra, getMovimentacoesByObra, registrarMovimentacao, addMaterial, updateMaterial } = useEstoque();
+  const [obraId, setObraId] = useState(obras[0]?.id || '');
+  const obra = obras.find(o => o.id === obraId) || obras[0];
   const materiais = getMateriaisByObra(obra.id);
   const movimentacoes = getMovimentacoesByObra(obra.id);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [movTipo, setMovTipo] = useState<'entrada' | 'saida'>('entrada');
   const [newMov, setNewMov] = useState({ materialId: '', quantidade: '', origemDestino: '', observacoes: '' });
+
+  // Cadastro dialog
+  const [cadastroOpen, setCadastroOpen] = useState(false);
+  const [newMat, setNewMat] = useState({ nome: '', unidade: '', categoria: '', estoqueMinimo: '' });
+
+  // Inline edit for estoque mínimo
+  const [editingMinId, setEditingMinId] = useState<string | null>(null);
+  const [editingMinValue, setEditingMinValue] = useState('');
 
   const materiaisBaixo = materiais.filter(m => m.estoqueAtual < m.estoqueMinimo);
   const filtered = materiais.filter(m => !search || m.nome.toLowerCase().includes(search.toLowerCase()));
@@ -51,23 +65,107 @@ export default function EstoquePage() {
     setNewMov({ materialId: '', quantidade: '', origemDestino: '', observacoes: '' });
   };
 
+  const handleCadastrar = () => {
+    addMaterial({
+      id: `m${Date.now()}`,
+      obraId: obra.id,
+      nome: newMat.nome,
+      categoria: newMat.categoria,
+      unidade: newMat.unidade,
+      estoqueAtual: 0,
+      estoqueMinimo: parseInt(newMat.estoqueMinimo) || 0,
+      localizacao: '',
+      observacoes: '',
+    });
+    setCadastroOpen(false);
+    setNewMat({ nome: '', unidade: '', categoria: '', estoqueMinimo: '' });
+  };
+
+  const handleSaveMin = (id: string) => {
+    updateMaterial(id, { estoqueMinimo: parseInt(editingMinValue) || 0 });
+    setEditingMinId(null);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Estoque / Materiais</h1>
-          <p className="text-muted-foreground text-sm">{obra.nome}</p>
+          <div className="mt-1">
+            <Select value={obraId} onValueChange={setObraId}>
+              <SelectTrigger className="w-[280px] h-8 text-sm">
+                <SelectValue placeholder="Selecionar obra..." />
+              </SelectTrigger>
+              <SelectContent>
+                {obras.map(o => (
+                  <SelectItem key={o.id} value={o.id}>{o.codigo} - {o.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         {canMovimentar && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {/* Cadastrar Material */}
+            <Dialog open={cadastroOpen} onOpenChange={setCadastroOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-1" /> Cadastrar Material
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Cadastrar Novo Material</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Nome do Material *</label>
+                    <Input placeholder="Ex: Cimento CP-II 50kg" value={newMat.nome} onChange={e => setNewMat({ ...newMat, nome: e.target.value })} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Unidade *</label>
+                      <Select value={newMat.unidade} onValueChange={v => setNewMat({ ...newMat, unidade: v })}>
+                        <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                        <SelectContent>
+                          {['un', 'kg', 'm', 'm²', 'm³', 'saco', 'barra', 'rolo', 'lata', 'l', 't', 'pç', 'cx'].map(u => (
+                            <SelectItem key={u} value={u}>{u}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Categoria *</label>
+                      <Select value={newMat.categoria} onValueChange={v => setNewMat({ ...newMat, categoria: v })}>
+                        <SelectTrigger><SelectValue placeholder="Selecionar..." /></SelectTrigger>
+                        <SelectContent>
+                          {categoriasEstoque.map(c => (
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Estoque Mínimo</label>
+                    <Input type="number" placeholder="0" value={newMat.estoqueMinimo} onChange={e => setNewMat({ ...newMat, estoqueMinimo: e.target.value })} />
+                  </div>
+                  <Button onClick={handleCadastrar} className="w-full" disabled={!newMat.nome.trim() || !newMat.unidade || !newMat.categoria}>
+                    Cadastrar Material
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Movimentação */}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button onClick={() => setMovTipo('entrada')} variant="outline">
+                <Button onClick={() => setMovTipo('entrada')} variant="outline" size="sm">
                   <ArrowDownCircle className="h-4 w-4 mr-1" /> Entrada
                 </Button>
               </DialogTrigger>
               <DialogTrigger asChild>
-                <Button onClick={() => setMovTipo('saida')}>
+                <Button onClick={() => setMovTipo('saida')} size="sm">
                   <ArrowUpCircle className="h-4 w-4 mr-1" /> Saída
                 </Button>
               </DialogTrigger>
@@ -164,7 +262,34 @@ export default function EstoquePage() {
                     </td>
                     <td className="p-2 text-muted-foreground hidden md:table-cell">{m.categoria}</td>
                     <td className="p-2 text-center font-semibold text-foreground">{m.estoqueAtual} {m.unidade}</td>
-                    <td className="p-2 text-center text-muted-foreground hidden md:table-cell">{m.estoqueMinimo} {m.unidade}</td>
+                    <td className="p-2 text-center text-muted-foreground hidden md:table-cell">
+                      {editingMinId === m.id ? (
+                        <div className="flex items-center justify-center gap-1">
+                          <Input
+                            type="number"
+                            className="h-7 w-16 text-xs text-center"
+                            value={editingMinValue}
+                            onChange={e => setEditingMinValue(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') handleSaveMin(m.id); if (e.key === 'Escape') setEditingMinId(null); }}
+                            autoFocus
+                          />
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleSaveMin(m.id)}>
+                            <Check className="h-3.5 w-3.5 text-success" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingMinId(null)}>
+                            <X className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span
+                          className="cursor-pointer hover:text-foreground hover:underline"
+                          onClick={() => { setEditingMinId(m.id); setEditingMinValue(String(m.estoqueMinimo)); }}
+                          title="Clique para editar"
+                        >
+                          {m.estoqueMinimo} {m.unidade}
+                        </span>
+                      )}
+                    </td>
                     <td className="p-2 text-center">
                       {m.estoqueAtual < m.estoqueMinimo ? (
                         <Badge variant="secondary" className="bg-destructive/10 text-destructive border-0">Baixo</Badge>
