@@ -43,7 +43,7 @@ export default function LoginPage() {
     setSubmitting(false);
     if (result.success) {
       toast({ title: 'Conta criada com sucesso!', description: 'Você já está logado.' });
-      navigate('/dashboard');
+      navigate('/painel');
     } else {
       setError(result.error || 'Erro ao criar conta.');
     }
