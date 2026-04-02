@@ -12,7 +12,7 @@ const gestorLinks = [
   { to: '/obras', label: 'Obras', icon: Building2 },
   { to: '/orcamento', label: 'Orçamento', icon: DollarSign },
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
-  { to: '/diario', label: 'Diário de Obra', icon: BookOpen },
+  { to: '/diario', label: 'Diário', icon: BookOpen },
   { to: '/estoque', label: 'Estoque', icon: Package },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
 ];
@@ -21,7 +21,7 @@ const funcionarioLinks = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/obras', label: 'Obras', icon: Building2 },
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
-  { to: '/diario', label: 'Diário de Obra', icon: BookOpen },
+  { to: '/diario', label: 'Diário', icon: BookOpen },
   { to: '/estoque', label: 'Estoque', icon: Package },
 ];
 
@@ -30,8 +30,33 @@ const clienteLinks = [
   { to: '/obras', label: 'Obras', icon: Building2 },
   { to: '/orcamento', label: 'Orçamento', icon: DollarSign },
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
-  { to: '/diario', label: 'Diário de Obra', icon: BookOpen },
+  { to: '/diario', label: 'Diário', icon: BookOpen },
   { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
+];
+
+// Bottom tab bar: show most-used items for field work
+const mobileGestorTabs = [
+  { to: '/dashboard', label: 'Início', icon: LayoutDashboard },
+  { to: '/diario', label: 'Diário', icon: BookOpen },
+  { to: '/estoque', label: 'Estoque', icon: Package },
+  { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
+  { to: '/_more', label: 'Mais', icon: Menu },
+];
+
+const mobileFuncionarioTabs = [
+  { to: '/dashboard', label: 'Início', icon: LayoutDashboard },
+  { to: '/diario', label: 'Diário', icon: BookOpen },
+  { to: '/estoque', label: 'Estoque', icon: Package },
+  { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
+  { to: '/_more', label: 'Mais', icon: Menu },
+];
+
+const mobileClienteTabs = [
+  { to: '/dashboard', label: 'Início', icon: LayoutDashboard },
+  { to: '/diario', label: 'Diário', icon: BookOpen },
+  { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
+  { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
+  { to: '/_more', label: 'Mais', icon: Menu },
 ];
 
 const roleLabels = { gestor: 'Gestor', funcionario: 'Funcionário', cliente: 'Cliente' };
@@ -39,11 +64,19 @@ const roleLabels = { gestor: 'Gestor', funcionario: 'Funcionário', cliente: 'Cl
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const location = useLocation();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   if (!user) return null;
 
   const links = user.role === 'gestor' ? gestorLinks : user.role === 'funcionario' ? funcionarioLinks : clienteLinks;
+  const mobileTabs = user.role === 'gestor' ? mobileGestorTabs : user.role === 'funcionario' ? mobileFuncionarioTabs : mobileClienteTabs;
+  const mobileTabRoutes = mobileTabs.filter(t => t.to !== '/_more').map(t => t.to);
+  const moreLinks = links.filter(l => !mobileTabRoutes.includes(l.to));
+
+  const isActiveRoute = (to: string) => {
+    if (to === '/_more') return moreLinks.some(l => location.pathname === l.to) || moreMenuOpen;
+    return location.pathname === to;
+  };
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -90,32 +123,38 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-sidebar z-30 flex items-center justify-between px-4">
+      {/* Mobile Top Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-12 bg-sidebar z-30 flex items-center justify-between px-4 safe-area-top">
         <div className="flex items-center gap-2">
-          <HardHat className="h-6 w-6 text-sidebar-primary" />
-          <span className="text-base font-bold text-sidebar-primary-foreground">ObraFácil</span>
+          <HardHat className="h-5 w-5 text-sidebar-primary" />
+          <span className="text-sm font-bold text-sidebar-primary-foreground">ObraFácil</span>
         </div>
-        <button onClick={() => setMobileOpen(!mobileOpen)} className="text-sidebar-foreground p-1">
-          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link to="/perfil" className="text-sidebar-foreground p-1">
+            <User className="h-5 w-5" />
+          </Link>
+        </div>
       </div>
 
-      {/* Mobile menu overlay */}
-      {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 bg-foreground/50" onClick={() => setMobileOpen(false)}>
-          <div className="absolute top-14 left-0 right-0 bg-sidebar border-b border-sidebar-border shadow-lg" onClick={e => e.stopPropagation()}>
-            <nav className="py-2 px-3 space-y-1">
-              {links.map(link => (
+      {/* Mobile "More" overlay */}
+      {moreMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 bg-foreground/50" onClick={() => setMoreMenuOpen(false)}>
+          <div
+            className="absolute bottom-16 left-0 right-0 bg-card border-t border-border rounded-t-2xl shadow-xl animate-fade-in"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto mt-3 mb-2" />
+            <nav className="py-2 px-4 space-y-1">
+              {moreLinks.map(link => (
                 <Link
                   key={link.to}
                   to={link.to}
-                  onClick={() => setMobileOpen(false)}
+                  onClick={() => setMoreMenuOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors",
                     location.pathname === link.to
-                      ? "bg-sidebar-accent text-sidebar-primary"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent"
+                      ? "bg-primary/10 text-primary"
+                      : "text-foreground hover:bg-muted"
                   )}
                 >
                   <link.icon className="h-5 w-5" />
@@ -124,27 +163,66 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               ))}
               <Link
                 to="/perfil"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent"
+                onClick={() => setMoreMenuOpen(false)}
+                className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm text-foreground hover:bg-muted"
               >
                 <User className="h-5 w-5" />
                 Perfil
               </Link>
               <button
-                onClick={() => { logout(); setMobileOpen(false); }}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent w-full"
+                onClick={() => { logout(); setMoreMenuOpen(false); }}
+                className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm text-destructive hover:bg-destructive/10 w-full"
               >
                 <LogOut className="h-5 w-5" />
                 Sair
               </button>
             </nav>
+            <div className="h-4" />
           </div>
         </div>
       )}
 
+      {/* Mobile Bottom Tab Bar */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card border-t border-border safe-area-bottom">
+        <div className="flex items-center justify-around h-14">
+          {mobileTabs.map(tab => {
+            const active = isActiveRoute(tab.to);
+            if (tab.to === '/_more') {
+              return (
+                <button
+                  key={tab.to}
+                  onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors",
+                    active ? "text-primary" : "text-muted-foreground"
+                  )}
+                >
+                  <tab.icon className="h-5 w-5" />
+                  <span className="text-[10px] font-medium">{tab.label}</span>
+                </button>
+              );
+            }
+            return (
+              <Link
+                key={tab.to}
+                to={tab.to}
+                onClick={() => setMoreMenuOpen(false)}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors",
+                  active ? "text-primary" : "text-muted-foreground"
+                )}
+              >
+                <tab.icon className="h-5 w-5" />
+                <span className="text-[10px] font-medium">{tab.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+
       {/* Main Content */}
-      <main className="flex-1 lg:ml-64 pt-14 lg:pt-0 min-h-screen">
-        <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+      <main className="flex-1 lg:ml-64 pt-12 pb-16 lg:pt-0 lg:pb-0 min-h-screen">
+        <div className="p-3 sm:p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
           {children}
         </div>
       </main>
