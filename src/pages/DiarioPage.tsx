@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { mockDiario, formatDate, statusDiarioLabels, climaLabels, DiarioRegistro, DiarioServico, DiarioMaterialUsado } from '@/data/mockData';
-import { Plus, Users, CheckCircle2, Clock, XCircle, Trash2, Link2, Package, Pencil, CalendarIcon } from 'lucide-react';
+import { Plus, Users, CheckCircle2, Clock, XCircle, Trash2, Link2, Package, Pencil, CalendarIcon, Filter, ChevronDown } from 'lucide-react';
 
 const statusIcons: Record<string, React.ReactNode> = {
   pendente: <Clock className="h-4 w-4 text-warning" />,
@@ -36,6 +36,7 @@ export default function DiarioPage() {
   const [registros, setRegistros] = useState<DiarioRegistro[]>(mockDiario);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Form state
   const [dataRegistro, setDataRegistro] = useState<Date>(new Date());
@@ -55,6 +56,8 @@ export default function DiarioPage() {
   const [filterMaterial, setFilterMaterial] = useState('_all');
   const [filterStatus, setFilterStatus] = useState('_all');
   const [filterProblemas, setFilterProblemas] = useState('_all');
+
+  const hasActiveFilters = filterEtapa !== '_all' || filterMaterial !== '_all' || filterStatus !== '_all' || filterProblemas !== '_all';
 
   const obraRegistros = registros.filter(r => r.obraId === obra.id);
   const visibleRegistros = user?.role === 'cliente'
@@ -79,32 +82,18 @@ export default function DiarioPage() {
   const sortedRegistros = [...filteredRegistros].sort((a, b) => b.data.localeCompare(a.data));
 
   // --- Helpers for etapa progress ---
-  const getEtapaPercentual = (categoriaId: string, composicaoId?: string): number => {
-    const cat = categorias.find(c => c.id === categoriaId);
-    if (!cat) return 0;
-    if (composicaoId) {
-      const comp = cat.composicoes.find(c => c.id === composicaoId);
-      return comp?.concluida ? 100 : (comp?.pesoCronograma || 0);
-    }
-    return cat.percentualCronograma || 0;
-  };
-
-  // Compute accumulated % for a category/composição combining cronograma baseline + diário entries
   const getAccumulatedPercent = (categoriaId: string, composicaoId?: string): number => {
     const cat = categorias.find(c => c.id === categoriaId);
     if (!cat) return 0;
 
-    // Start with existing cronograma baseline
     let baseline = 0;
     if (composicaoId) {
       const comp = cat.composicoes.find(c => c.id === composicaoId);
       if (comp?.concluida) return 100;
-      // Use pesoCronograma as accumulated progress if set from cronograma
     } else {
       baseline = cat.percentualCronograma || 0;
     }
 
-    // Add percentages from diário servicos
     let fromDiario = 0;
     for (const reg of registros) {
       for (const svc of reg.servicos) {
@@ -180,10 +169,8 @@ export default function DiarioPage() {
     const filteredMateriais = materiaisUsados.filter(m => m.materialId && m.quantidade > 0);
 
     if (editingId) {
-      // --- EDIT MODE ---
       const oldRegistro = registros.find(r => r.id === editingId);
       
-      // Reverse old material movements (return stock)
       if (oldRegistro) {
         for (const oldMat of oldRegistro.materiaisUtilizados) {
           registrarMovimentacao({
@@ -201,7 +188,6 @@ export default function DiarioPage() {
         }
       }
 
-      // Register new material movements
       for (const matUsado of filteredMateriais) {
         registrarMovimentacao({
           id: `mv${Date.now()}-${matUsado.materialId}`,
@@ -334,49 +320,40 @@ export default function DiarioPage() {
   const canCreate = hasPermission('diario:create');
   const canApprove = hasPermission('diario:approve');
 
-  // Helper to get flat list of all compositions with category info
-  const getAllComposicoes = () => {
-    const result: { catId: string; catNome: string; comp: OrcamentoComposicao }[] = [];
-    for (const cat of categorias) {
-      for (const comp of cat.composicoes) {
-        result.push({ catId: cat.id, catNome: cat.nome, comp });
-      }
-    }
-    return result;
-  };
-
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Diário de Obra</h1>
-          <div className="mt-1">
-            <Select value={obraId} onValueChange={setObraId}>
-              <SelectTrigger className="w-[280px] h-8 text-sm">
-                <SelectValue placeholder="Selecionar obra..." />
-              </SelectTrigger>
-              <SelectContent>
-                {obras.map(o => (
-                  <SelectItem key={o.id} value={o.id}>{o.codigo} - {o.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+      {/* Header - compact on mobile */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-lg sm:text-2xl font-bold text-foreground">Diário de Obra</h1>
+          <Select value={obraId} onValueChange={setObraId}>
+            <SelectTrigger className="w-full sm:w-[280px] h-8 text-xs sm:text-sm mt-1">
+              <SelectValue placeholder="Selecionar obra..." />
+            </SelectTrigger>
+            <SelectContent>
+              {obras.map(o => (
+                <SelectItem key={o.id} value={o.id}>{o.codigo} - {o.nome}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         {canCreate && (
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-1" /> Novo Registro</Button>
+              <Button size="sm" className="shrink-0 h-9 sm:h-10">
+                <Plus className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Novo Registro</span>
+              </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
               <DialogHeader>
-                <DialogTitle>{editingId ? 'Editar Registro do Diário' : 'Novo Registro do Diário'}</DialogTitle>
+                <DialogTitle className="text-base sm:text-lg">{editingId ? 'Editar Registro' : 'Novo Registro'}</DialogTitle>
               </DialogHeader>
-              <div className="space-y-5 pt-2">
-                {/* Basic info */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Data</label>
+              <div className="space-y-4 pt-2">
+                {/* Basic info - stack on mobile */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs sm:text-sm font-medium text-foreground">Data</label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-10", !dataRegistro && "text-muted-foreground")}>
@@ -397,21 +374,23 @@ export default function DiarioPage() {
                       </PopoverContent>
                     </Popover>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Clima</label>
-                    <Select value={clima} onValueChange={v => setClima(v as DiarioRegistro['clima'])}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="sol">☀️ Sol</SelectItem>
-                        <SelectItem value="nublado">⛅ Nublado</SelectItem>
-                        <SelectItem value="chuva">🌧️ Chuva</SelectItem>
-                        <SelectItem value="chuvoso_forte">⛈️ Chuva Forte</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Trabalhadores</label>
-                    <Input type="number" placeholder="0" value={trabalhadores} onChange={e => setTrabalhadores(e.target.value)} />
+                  <div className="grid grid-cols-2 sm:contents gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs sm:text-sm font-medium text-foreground">Clima</label>
+                      <Select value={clima} onValueChange={v => setClima(v as DiarioRegistro['clima'])}>
+                        <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sol">☀️ Sol</SelectItem>
+                          <SelectItem value="nublado">⛅ Nublado</SelectItem>
+                          <SelectItem value="chuva">🌧️ Chuva</SelectItem>
+                          <SelectItem value="chuvoso_forte">⛈️ Forte</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs sm:text-sm font-medium text-foreground">Trabalhadores</label>
+                      <Input type="number" placeholder="0" className="h-10" value={trabalhadores} onChange={e => setTrabalhadores(e.target.value)} />
+                    </div>
                   </div>
                 </div>
 
@@ -419,13 +398,13 @@ export default function DiarioPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <label className="text-sm font-semibold text-foreground">Serviços Executados</label>
-                    <Button type="button" variant="outline" size="sm" onClick={addServico}>
-                      <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar Serviço
+                    <Button type="button" variant="outline" size="sm" className="h-8" onClick={addServico}>
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
                     </Button>
                   </div>
 
                   {servicos.length === 0 && (
-                    <p className="text-sm text-muted-foreground italic">Nenhum serviço adicionado. Clique em "Adicionar Serviço" para começar.</p>
+                    <p className="text-sm text-muted-foreground italic">Nenhum serviço adicionado.</p>
                   )}
 
                   {servicos.map((svc, idx) => {
@@ -435,14 +414,15 @@ export default function DiarioPage() {
                     return (
                       <div key={svc.id} className="border border-border rounded-lg p-3 space-y-3">
                         <div className="flex items-start gap-2">
-                          <div className="flex-1 space-y-2">
+                          <div className="flex-1">
                             <Input
-                              placeholder="Descrição do serviço executado..."
+                              placeholder="Descrição do serviço..."
                               value={svc.descricao}
                               onChange={e => updateServico(idx, { descricao: e.target.value })}
+                              className="h-10"
                             />
                           </div>
-                          <Button type="button" variant="ghost" size="icon" className="shrink-0" onClick={() => removeServico(idx)}>
+                          <Button type="button" variant="ghost" size="icon" className="shrink-0 h-10 w-10" onClick={() => removeServico(idx)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>
@@ -453,7 +433,7 @@ export default function DiarioPage() {
                             <Link2 className="h-3.5 w-3.5" />
                             <span>Vincular a etapa (opcional)</span>
                           </div>
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <Select
                               value={svc.categoriaId || '_none'}
                               onValueChange={v => updateServico(idx, {
@@ -462,7 +442,7 @@ export default function DiarioPage() {
                                 percentualAdicionado: undefined,
                               })}
                             >
-                              <SelectTrigger className="text-xs h-8">
+                              <SelectTrigger className="text-xs h-9">
                                 <SelectValue placeholder="Categoria..." />
                               </SelectTrigger>
                               <SelectContent>
@@ -480,7 +460,7 @@ export default function DiarioPage() {
                                   composicaoId: v === '_cat_only' ? undefined : v,
                                 })}
                               >
-                                <SelectTrigger className="text-xs h-8">
+                                <SelectTrigger className="text-xs h-9">
                                   <SelectValue placeholder="Composição..." />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -496,7 +476,7 @@ export default function DiarioPage() {
                           {svc.categoriaId && (
                             <div className="bg-muted/50 rounded-md p-2 space-y-2">
                               <div className="flex items-center justify-between text-xs">
-                                <span className="text-muted-foreground">Progresso acumulado da etapa</span>
+                                <span className="text-muted-foreground">Progresso acumulado</span>
                                 <span className="font-semibold text-foreground">{accum.toFixed(1)}%</span>
                               </div>
                               <Progress value={accum} className="h-2" />
@@ -507,7 +487,7 @@ export default function DiarioPage() {
                                   min={0}
                                   max={100 - accum}
                                   step={0.5}
-                                  className="h-7 text-xs w-20"
+                                  className="h-9 text-xs w-20"
                                   placeholder="0"
                                   value={svc.percentualAdicionado || ''}
                                   onChange={e => updateServico(idx, { percentualAdicionado: parseFloat(e.target.value) || 0 })}
@@ -526,10 +506,10 @@ export default function DiarioPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <label className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                      <Package className="h-4 w-4" /> Materiais Utilizados
+                      <Package className="h-4 w-4" /> Materiais
                     </label>
-                    <Button type="button" variant="outline" size="sm" onClick={addMaterial}>
-                      <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar Material
+                    <Button type="button" variant="outline" size="sm" className="h-8" onClick={addMaterial}>
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
                     </Button>
                   </div>
 
@@ -540,58 +520,61 @@ export default function DiarioPage() {
                   {materiaisUsados.map((matU, idx) => {
                     const matInfo = materiaisObra.find(m => m.id === matU.materialId);
                     return (
-                      <div key={matU.id} className="flex items-center gap-2 border border-border rounded-lg p-2">
-                        <div className="flex-1">
-                          <Select value={matU.materialId || '_none'} onValueChange={v => v !== '_none' && updateMaterial(idx, v)}>
-                            <SelectTrigger className="text-xs h-8">
-                              <SelectValue placeholder="Selecionar material..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="_none">Selecionar...</SelectItem>
-                              {materiaisObra.map(m => (
-                                <SelectItem key={m.id} value={m.id}>
-                                  {m.nome} (estoque: {m.estoqueAtual} {m.unidade})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                      <div key={matU.id} className="border border-border rounded-lg p-2 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1">
+                            <Select value={matU.materialId || '_none'} onValueChange={v => v !== '_none' && updateMaterial(idx, v)}>
+                              <SelectTrigger className="text-xs h-9">
+                                <SelectValue placeholder="Selecionar material..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="_none">Selecionar...</SelectItem>
+                                {materiaisObra.map(m => (
+                                  <SelectItem key={m.id} value={m.id}>
+                                    {m.nome} ({m.estoqueAtual} {m.unidade})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => removeMaterial(idx)}>
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                          </Button>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2 pl-1">
+                          <label className="text-xs text-muted-foreground">Qtd:</label>
                           <Input
                             type="number"
                             min={0}
                             max={matInfo?.estoqueAtual}
-                            className="h-8 text-xs w-20"
-                            placeholder="Qtd"
+                            className="h-9 text-xs w-24"
+                            placeholder="0"
                             value={matU.quantidade || ''}
                             onChange={e => updateMaterialQty(idx, parseFloat(e.target.value) || 0)}
                           />
-                          <span className="text-xs text-muted-foreground w-10">{matU.unidade}</span>
+                          <span className="text-xs text-muted-foreground">{matU.unidade}</span>
                         </div>
-                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => removeMaterial(idx)}>
-                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                        </Button>
                       </div>
                     );
                   })}
                 </div>
 
                 {/* Observações e Problemas */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-sm font-medium text-foreground">Observações</label>
                   <Textarea placeholder="Observações gerais..." rows={2} value={observacoes} onChange={e => setObservacoes(e.target.value)} />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-sm font-medium text-foreground">Problemas Ocorridos</label>
                   <Textarea placeholder="Relate problemas, se houver..." rows={2} value={problemas} onChange={e => setProblemas(e.target.value)} />
                 </div>
 
-                <div className="border border-dashed border-border rounded-lg p-6 text-center">
+                <div className="border border-dashed border-border rounded-lg p-4 text-center">
                   <p className="text-sm text-muted-foreground">📷 Área para anexar fotos</p>
                   <p className="text-xs text-muted-foreground">(Upload será habilitado em breve)</p>
                 </div>
 
-                <Button onClick={handleSubmit} className="w-full" disabled={servicos.filter(s => s.descricao.trim()).length === 0}>
+                <Button onClick={handleSubmit} className="w-full h-11 text-sm" disabled={servicos.filter(s => s.descricao.trim()).length === 0}>
                   {editingId ? 'Salvar Alterações' : 'Salvar Registro'}
                 </Button>
               </div>
@@ -600,118 +583,139 @@ export default function DiarioPage() {
         )}
       </div>
 
-      {/* Filters */}
-      <Card className="shadow-card">
-        <CardContent className="p-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground">Filtros:</span>
-            <Select value={filterEtapa} onValueChange={setFilterEtapa}>
-              <SelectTrigger className="w-[180px] h-8 text-xs">
-                <SelectValue placeholder="Etapa..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_all">Todas as etapas</SelectItem>
-                {categorias.map(cat => (
-                  <SelectItem key={cat.id} value={cat.id}>{cat.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterMaterial} onValueChange={setFilterMaterial}>
-              <SelectTrigger className="w-[180px] h-8 text-xs">
-                <SelectValue placeholder="Material..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_all">Todos os materiais</SelectItem>
-                {materiaisObra.map(m => (
-                  <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-[150px] h-8 text-xs">
-                <SelectValue placeholder="Status..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_all">Todos os status</SelectItem>
-                <SelectItem value="aprovado">✅ Aprovado</SelectItem>
-                <SelectItem value="pendente">⏳ Pendente</SelectItem>
-                <SelectItem value="rejeitado">❌ Reprovado</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={filterProblemas} onValueChange={setFilterProblemas}>
-              <SelectTrigger className="w-[150px] h-8 text-xs">
-                <SelectValue placeholder="Problemas..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="_all">Todos</SelectItem>
-                <SelectItem value="com">Com problemas</SelectItem>
-                <SelectItem value="sem">Sem problemas</SelectItem>
-              </SelectContent>
-            </Select>
-            {(filterEtapa !== '_all' || filterMaterial !== '_all' || filterStatus !== '_all' || filterProblemas !== '_all') && (
-              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setFilterEtapa('_all'); setFilterMaterial('_all'); setFilterStatus('_all'); setFilterProblemas('_all'); }}>
-                Limpar filtros
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filters - collapsible on mobile */}
+      <div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full sm:hidden h-9 justify-between"
+          onClick={() => setFiltersOpen(!filtersOpen)}
+        >
+          <span className="flex items-center gap-1.5 text-xs">
+            <Filter className="h-3.5 w-3.5" />
+            Filtros
+            {hasActiveFilters && <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">Ativo</Badge>}
+          </span>
+          <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", filtersOpen && "rotate-180")} />
+        </Button>
 
-      {/* Timeline */}
-      <div className="space-y-4">
+        <Card className={cn("shadow-card mt-2 sm:mt-0", !filtersOpen && "hidden sm:block")}>
+          <CardContent className="p-3">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground hidden sm:inline">Filtros:</span>
+              <Select value={filterEtapa} onValueChange={setFilterEtapa}>
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder="Etapa..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_all">Todas etapas</SelectItem>
+                  {categorias.map(cat => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterMaterial} onValueChange={setFilterMaterial}>
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder="Material..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_all">Todos materiais</SelectItem>
+                  {materiaisObra.map(m => (
+                    <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder="Status..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_all">Todos status</SelectItem>
+                  <SelectItem value="aprovado">✅ Aprovado</SelectItem>
+                  <SelectItem value="pendente">⏳ Pendente</SelectItem>
+                  <SelectItem value="rejeitado">❌ Reprovado</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterProblemas} onValueChange={setFilterProblemas}>
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder="Problemas..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_all">Todos</SelectItem>
+                  <SelectItem value="com">Com problemas</SelectItem>
+                  <SelectItem value="sem">Sem problemas</SelectItem>
+                </SelectContent>
+              </Select>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" className="h-9 text-xs col-span-2 sm:col-span-1" onClick={() => { setFilterEtapa('_all'); setFilterMaterial('_all'); setFilterStatus('_all'); setFilterProblemas('_all'); }}>
+                  Limpar
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Timeline - cards otimizados para mobile */}
+      <div className="space-y-3">
         {sortedRegistros.map(registro => (
           <Card key={registro.id} className="shadow-card">
-            <CardContent className="p-4 sm:p-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-                <div className="flex items-center gap-3">
+            <CardContent className="p-3 sm:p-5">
+              {/* Header do registro */}
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 min-w-0">
                   {statusIcons[registro.status]}
-                  <div>
-                    <div className="flex items-center gap-2">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <p className="text-sm font-semibold text-foreground">{formatDate(registro.data)}</p>
                       <span className="text-sm">{climaLabels[registro.clima]}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">por {registro.usuario}</p>
+                    <p className="text-xs text-muted-foreground truncate">por {registro.usuario}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className={
+                <div className="flex items-center gap-1 shrink-0">
+                  <Badge variant="secondary" className={cn(
+                    "text-[10px] px-1.5",
                     registro.status === 'aprovado' ? 'bg-success/10 text-success border-0' :
                     registro.status === 'rejeitado' ? 'bg-destructive/10 text-destructive border-0' :
                     'bg-warning/10 text-warning border-0'
-                  }>
+                  )}>
                     {statusDiarioLabels[registro.status]}
                   </Badge>
-                  {(user?.role === 'gestor' || (canCreate && registro.status !== 'aprovado')) && (
-                    <Button size="sm" variant="ghost" onClick={() => loadRegistroForEdit(registro)}>
-                      <Pencil className="h-3.5 w-3.5 mr-1" /> Editar
-                    </Button>
-                  )}
-                  {canApprove && registro.status === 'pendente' && (
-                    <Button size="sm" variant="outline" onClick={() => handleApprove(registro.id)}>
-                      Aprovar
-                    </Button>
-                  )}
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {registro.trabalhadores} trabalhadores</span>
-                </div>
+              {/* Actions row - compact */}
+              <div className="flex items-center gap-1 mb-2">
+                <span className="flex items-center gap-1 text-xs text-muted-foreground mr-auto">
+                  <Users className="h-3 w-3" /> {registro.trabalhadores}
+                </span>
+                {(user?.role === 'gestor' || (canCreate && registro.status !== 'aprovado')) && (
+                  <Button size="sm" variant="ghost" className="h-7 text-xs px-2" onClick={() => loadRegistroForEdit(registro)}>
+                    <Pencil className="h-3 w-3 mr-1" /> Editar
+                  </Button>
+                )}
+                {canApprove && registro.status === 'pendente' && (
+                  <Button size="sm" variant="outline" className="h-7 text-xs px-2" onClick={() => handleApprove(registro.id)}>
+                    Aprovar
+                  </Button>
+                )}
+              </div>
 
+              <div className="space-y-2">
                 {/* Serviços individuais */}
                 {registro.servicos && registro.servicos.length > 0 && (
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Serviços Executados</p>
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Serviços</p>
                     <div className="space-y-1">
                       {registro.servicos.map(svc => {
                         const linkedCat = svc.categoriaId ? categorias.find(c => c.id === svc.categoriaId) : null;
                         const linkedComp = svc.composicaoId && linkedCat ? linkedCat.composicoes.find(c => c.id === svc.composicaoId) : null;
                         return (
-                          <div key={svc.id} className="flex items-center gap-2 text-sm">
+                          <div key={svc.id} className="flex flex-wrap items-center gap-1 text-sm">
                             <span className="text-foreground">• {svc.descricao}</span>
                             {linkedCat && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                              <Badge variant="outline" className="text-[10px] px-1 py-0">
                                 {linkedComp ? linkedComp.descricao : linkedCat.nome}
                                 {svc.percentualAdicionado ? ` +${svc.percentualAdicionado}%` : ''}
                               </Badge>
@@ -723,10 +727,9 @@ export default function DiarioPage() {
                   </div>
                 )}
 
-                {/* Fallback to old text field */}
                 {(!registro.servicos || registro.servicos.length === 0) && registro.servicosExecutados && (
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Serviços Executados</p>
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Serviços</p>
                     <p className="text-sm text-foreground">{registro.servicosExecutados}</p>
                   </div>
                 )}
@@ -734,12 +737,12 @@ export default function DiarioPage() {
                 {/* Materiais utilizados */}
                 {registro.materiaisUtilizados && registro.materiaisUtilizados.length > 0 && (
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
-                      <Package className="h-3 w-3" /> Materiais Utilizados
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+                      <Package className="h-3 w-3" /> Materiais
                     </p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-1">
                       {registro.materiaisUtilizados.map(mat => (
-                        <Badge key={mat.id} variant="secondary" className="text-xs">
+                        <Badge key={mat.id} variant="secondary" className="text-[10px]">
                           {mat.materialNome}: {mat.quantidade} {mat.unidade}
                         </Badge>
                       ))}
@@ -749,14 +752,14 @@ export default function DiarioPage() {
 
                 {registro.observacoes && (
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Observações</p>
-                    <p className="text-sm text-muted-foreground">{registro.observacoes}</p>
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Observações</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{registro.observacoes}</p>
                   </div>
                 )}
                 {registro.problemas && (
                   <div className="bg-destructive/5 rounded-md p-2">
-                    <p className="text-xs font-medium text-destructive uppercase tracking-wider mb-1">⚠ Problemas</p>
-                    <p className="text-sm text-destructive">{registro.problemas}</p>
+                    <p className="text-[10px] font-medium text-destructive uppercase tracking-wider mb-1">⚠ Problemas</p>
+                    <p className="text-xs sm:text-sm text-destructive">{registro.problemas}</p>
                   </div>
                 )}
               </div>
