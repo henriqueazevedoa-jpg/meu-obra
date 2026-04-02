@@ -75,10 +75,22 @@ function GestorPainel() {
       .then(({ data }) => { if (data) setDiarioRegistros(data as DiarioRow[]); });
   }, [obra?.id]);
 
+  const handleObraSelectChange = (value: string) => {
+    if (value === '__nova_obra__') {
+      navigate('/obras?nova=1');
+    } else {
+      setSelectedObraId(value);
+    }
+  };
+
   if (!obra) {
     return (
-      <div className="flex items-center justify-center py-20 text-muted-foreground text-sm">
-        Nenhuma obra cadastrada. Crie uma obra para começar.
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <p className="text-muted-foreground text-sm">Nenhuma obra cadastrada.</p>
+        <Button onClick={() => navigate('/obras?nova=1')}>
+          <Plus className="h-4 w-4 mr-2" />
+          Criar Nova Obra
+        </Button>
       </div>
     );
   }
