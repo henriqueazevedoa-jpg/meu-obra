@@ -163,6 +163,7 @@ function GestorPainel() {
       </div>
 
       {/* 1. Cabeçalho da obra */}
+      <div data-print-section="identificacao">
       <Card className="shadow-card print:shadow-none print:border">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Identificação da Obra</CardTitle>
