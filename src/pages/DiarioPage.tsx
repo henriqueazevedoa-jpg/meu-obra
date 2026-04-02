@@ -14,12 +14,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { formatDate, statusDiarioLabels, climaLabels, DiarioRegistro, DiarioServico, DiarioMaterialUsado } from '@/data/mockData';
-import { Plus, Users, CheckCircle2, Clock, XCircle, Trash2, Link2, Package, Pencil, CalendarIcon, Filter, ChevronDown } from 'lucide-react';
+import { Plus, Users, CheckCircle2, Clock, XCircle, Trash2, Link2, Package, Pencil, CalendarIcon, Filter, ChevronDown, Printer, Square, CheckSquare } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const statusIcons: Record<string, React.ReactNode> = {
@@ -119,6 +120,7 @@ export default function DiarioPage() {
   const [filterMaterial, setFilterMaterial] = useState('_all');
   const [filterStatus, setFilterStatus] = useState('_all');
   const [filterProblemas, setFilterProblemas] = useState('_all');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const hasActiveFilters = filterEtapa !== '_all' || filterMaterial !== '_all' || filterStatus !== '_all' || filterProblemas !== '_all';
 
@@ -402,6 +404,85 @@ export default function DiarioPage() {
   const canCreate = hasPermission('diario:create');
   const canApprove = hasPermission('diario:approve');
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === sortedRegistros.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(sortedRegistros.map(r => r.id)));
+    }
+  };
+
+  const printRegistros = (ids: string[]) => {
+    const toPrint = registros.filter(r => ids.includes(r.id));
+    if (toPrint.length === 0) return;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Diário de Obra</title>
+<style>
+  body { font-family: 'Inter', -apple-system, sans-serif; color: #1a1a2e; margin: 2cm; font-size: 12px; }
+  .header { border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 20px; }
+  .header h1 { font-size: 18px; margin: 0; }
+  .header p { margin: 2px 0; color: #666; font-size: 11px; }
+  .registro { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; break-inside: avoid; }
+  .registro-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .registro-header h3 { font-size: 14px; margin: 0; }
+  .badge { padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; }
+  .badge-aprovado { background: #dcfce7; color: #16a34a; }
+  .badge-pendente { background: #fef3c7; color: #d97706; }
+  .badge-rejeitado { background: #fecaca; color: #dc2626; }
+  .meta { display: flex; gap: 16px; color: #666; font-size: 11px; margin-bottom: 8px; }
+  .section { margin-top: 8px; }
+  .section-title { font-size: 10px; text-transform: uppercase; color: #999; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .problemas { background: #fef2f2; border-radius: 6px; padding: 8px; margin-top: 8px; }
+  .problemas p { color: #dc2626; margin: 0; }
+  .material-badge { display: inline-block; background: #f3f4f6; padding: 2px 8px; border-radius: 4px; margin: 2px; font-size: 11px; }
+  .fotos-placeholder { border: 1px dashed #d1d5db; border-radius: 6px; padding: 12px; text-align: center; color: #9ca3af; margin-top: 8px; }
+  @media print { body { margin: 1cm; } }
+</style>
+</head><body>
+<div class="header">
+  <h1>Diário de Obra</h1>
+  <p>${obra.codigo} — ${obra.nome}</p>
+  <p>Emitido em ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}</p>
+</div>
+${toPrint.map(r => {
+  const climaLabel = climaLabels[r.clima] || r.clima;
+  const statusLabel = statusDiarioLabels[r.status] || r.status;
+  const statusClass = r.status === 'aprovado' ? 'badge-aprovado' : r.status === 'pendente' ? 'badge-pendente' : 'badge-rejeitado';
+  return `<div class="registro">
+    <div class="registro-header">
+      <h3>${formatDate(r.data)} · ${climaLabel}</h3>
+      <span class="badge ${statusClass}">${statusLabel}</span>
+    </div>
+    <div class="meta">
+      <span>👤 ${r.usuario}</span>
+      <span>👷 ${r.trabalhadores} trabalhadores</span>
+    </div>
+    ${r.servicos && r.servicos.length > 0 ? `<div class="section"><div class="section-title">Serviços Executados</div><ul>${r.servicos.map(s => `<li>${s.descricao}${s.percentualAdicionado ? ` (+${s.percentualAdicionado}%)` : ''}</li>`).join('')}</ul></div>` : r.servicosExecutados ? `<div class="section"><div class="section-title">Serviços Executados</div><p>${r.servicosExecutados}</p></div>` : ''}
+    ${r.materiaisUtilizados && r.materiaisUtilizados.length > 0 ? `<div class="section"><div class="section-title">Materiais Utilizados</div>${r.materiaisUtilizados.map(m => `<span class="material-badge">${m.materialNome}: ${m.quantidade} ${m.unidade}</span>`).join('')}</div>` : ''}
+    ${r.observacoes ? `<div class="section"><div class="section-title">Observações</div><p>${r.observacoes}</p></div>` : ''}
+    ${r.problemas ? `<div class="problemas"><div class="section-title">⚠ Problemas Ocorridos</div><p>${r.problemas}</p></div>` : ''}
+    ${r.fotos && r.fotos.length > 0 ? `<div class="fotos-placeholder">📷 ${r.fotos.length} foto(s) anexada(s)</div>` : ''}
+  </div>`;
+}).join('')}
+</body></html>`;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.onload = () => { printWindow.print(); };
+  };
+
   if (!obra) {
     return (
       <div className="flex items-center justify-center py-20 text-muted-foreground text-sm">
@@ -651,6 +732,23 @@ export default function DiarioPage() {
         </Card>
       </div>
 
+      {/* Selection & Print actions */}
+      {sortedRegistros.length > 0 && (
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={toggleSelectAll}>
+              {selectedIds.size === sortedRegistros.length ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
+              {selectedIds.size > 0 ? `${selectedIds.size} selecionado(s)` : 'Selecionar'}
+            </Button>
+            {selectedIds.size > 0 && (
+              <Button variant="outline" size="sm" className="h-8 text-xs gap-1" onClick={() => printRegistros(Array.from(selectedIds))}>
+                <Printer className="h-3.5 w-3.5" /> Imprimir Selecionados
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Timeline */}
       {loading ? (
         <div className="text-center py-12 text-muted-foreground text-sm">Carregando registros...</div>
@@ -661,10 +759,15 @@ export default function DiarioPage() {
       ) : (
         <div className="space-y-3">
           {sortedRegistros.map(registro => (
-            <Card key={registro.id} className="shadow-card">
+            <Card key={registro.id} className={cn("shadow-card", selectedIds.has(registro.id) && "ring-2 ring-primary/30")}>
               <CardContent className="p-3 sm:p-5">
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2 min-w-0">
+                    <Checkbox
+                      checked={selectedIds.has(registro.id)}
+                      onCheckedChange={() => toggleSelect(registro.id)}
+                      className="mt-0.5 shrink-0"
+                    />
                     {statusIcons[registro.status]}
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
@@ -688,6 +791,9 @@ export default function DiarioPage() {
                   <span className="flex items-center gap-1 text-xs text-muted-foreground mr-auto">
                     <Users className="h-3 w-3" /> {registro.trabalhadores}
                   </span>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs px-2" onClick={() => printRegistros([registro.id])}>
+                    <Printer className="h-3 w-3 mr-1" /> Imprimir
+                  </Button>
                   {(user?.role === 'gestor' || (canCreate && registro.status !== 'aprovado')) && (
                     <Button size="sm" variant="ghost" className="h-7 text-xs px-2" onClick={() => loadRegistroForEdit(registro)}>
                       <Pencil className="h-3 w-3 mr-1" /> Editar

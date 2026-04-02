@@ -10,14 +10,14 @@ import { EstoqueProvider } from "@/contexts/EstoqueContext";
 import { ObraSelectionProvider } from "@/contexts/ObraSelectionContext";
 import AppLayout from "@/components/AppLayout";
 import LoginPage from "@/pages/LoginPage";
-import DashboardPage from "@/pages/DashboardPage";
+
 import ObrasPage from "@/pages/ObrasPage";
 import ObraDetalhePage from "@/pages/ObraDetalhePage";
 import OrcamentoPage from "@/pages/OrcamentoPage";
 import CronogramaPage from "@/pages/CronogramaPage";
 import DiarioPage from "@/pages/DiarioPage";
 import EstoquePage from "@/pages/EstoquePage";
-import RelatoriosPage from "@/pages/RelatoriosPage";
+import PainelObraPage from "@/pages/PainelObraPage";
 import PerfilPage from "@/pages/PerfilPage";
 import NotFound from "@/pages/NotFound";
 
@@ -53,7 +53,7 @@ function LoginRoute() {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/painel" replace />;
   }
 
   return <LoginPage />;
@@ -84,14 +84,14 @@ function AppRoutes() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LoginRoute />} />
-        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/painel" element={<ProtectedRoute><PainelObraPage /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><PainelObraPage /></ProtectedRoute>} />
         <Route path="/obras" element={<ProtectedRoute><ObrasPage /></ProtectedRoute>} />
         <Route path="/obras/:id" element={<ProtectedRoute><ObraDetalhePage /></ProtectedRoute>} />
         <Route path="/orcamento" element={<ProtectedRoute><OrcamentoPage /></ProtectedRoute>} />
         <Route path="/cronograma" element={<ProtectedRoute><CronogramaPage /></ProtectedRoute>} />
         <Route path="/diario" element={<ProtectedRoute><DiarioPage /></ProtectedRoute>} />
         <Route path="/estoque" element={<ProtectedRoute><EstoquePage /></ProtectedRoute>} />
-        <Route path="/relatorios" element={<ProtectedRoute><RelatoriosPage /></ProtectedRoute>} />
         <Route path="/perfil" element={<ProtectedRoute><PerfilPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>

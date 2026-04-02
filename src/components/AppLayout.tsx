@@ -2,23 +2,22 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Building2, DollarSign, CalendarDays,
-  BookOpen, Package, BarChart3, User, LogOut, Menu, X, HardHat
+  BookOpen, Package, User, LogOut, Menu, X, HardHat
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 const gestorLinks = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/painel', label: 'Painel da Obra', icon: LayoutDashboard },
   { to: '/obras', label: 'Obras', icon: Building2 },
   { to: '/orcamento', label: 'Orçamento', icon: DollarSign },
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
   { to: '/diario', label: 'Diário', icon: BookOpen },
   { to: '/estoque', label: 'Estoque', icon: Package },
-  { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
 ];
 
 const funcionarioLinks = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/painel', label: 'Painel da Obra', icon: LayoutDashboard },
   { to: '/obras', label: 'Obras', icon: Building2 },
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
   { to: '/diario', label: 'Diário', icon: BookOpen },
@@ -26,17 +25,16 @@ const funcionarioLinks = [
 ];
 
 const clienteLinks = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/painel', label: 'Painel da Obra', icon: LayoutDashboard },
   { to: '/obras', label: 'Obras', icon: Building2 },
   { to: '/orcamento', label: 'Orçamento', icon: DollarSign },
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
   { to: '/diario', label: 'Diário', icon: BookOpen },
-  { to: '/relatorios', label: 'Relatórios', icon: BarChart3 },
 ];
 
 // Bottom tab bar: show most-used items for field work
 const mobileGestorTabs = [
-  { to: '/dashboard', label: 'Início', icon: LayoutDashboard },
+  { to: '/painel', label: 'Painel', icon: LayoutDashboard },
   { to: '/diario', label: 'Diário', icon: BookOpen },
   { to: '/orcamento', label: 'Orçamento', icon: DollarSign },
   { to: '/estoque', label: 'Estoque', icon: Package },
@@ -44,7 +42,7 @@ const mobileGestorTabs = [
 ];
 
 const mobileFuncionarioTabs = [
-  { to: '/dashboard', label: 'Início', icon: LayoutDashboard },
+  { to: '/painel', label: 'Painel', icon: LayoutDashboard },
   { to: '/diario', label: 'Diário', icon: BookOpen },
   { to: '/estoque', label: 'Estoque', icon: Package },
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
@@ -52,7 +50,7 @@ const mobileFuncionarioTabs = [
 ];
 
 const mobileClienteTabs = [
-  { to: '/dashboard', label: 'Início', icon: LayoutDashboard },
+  { to: '/painel', label: 'Painel', icon: LayoutDashboard },
   { to: '/orcamento', label: 'Orçamento', icon: DollarSign },
   { to: '/diario', label: 'Diário', icon: BookOpen },
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
