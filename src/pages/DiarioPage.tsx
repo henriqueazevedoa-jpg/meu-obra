@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { mockDiario, formatDate, statusDiarioLabels, climaLabels, DiarioRegistro, DiarioServico, DiarioMaterialUsado } from '@/data/mockData';
-import { Plus, Users, CheckCircle2, Clock, XCircle, Trash2, Link2, Package } from 'lucide-react';
+import { Plus, Users, CheckCircle2, Clock, XCircle, Trash2, Link2, Package, Pencil } from 'lucide-react';
 
 const statusIcons: Record<string, React.ReactNode> = {
   pendente: <Clock className="h-4 w-4 text-warning" />,
@@ -28,6 +28,7 @@ export default function DiarioPage() {
   const obra = obras[0];
   const [registros, setRegistros] = useState<DiarioRegistro[]>(mockDiario.filter(d => d.obraId === obra.id));
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Form state
   const [clima, setClima] = useState<DiarioRegistro['clima']>('sol');
@@ -111,12 +112,81 @@ export default function DiarioPage() {
     setProblemas('');
     setServicos([]);
     setMateriaisUsados([]);
+    setEditingId(null);
+  };
+
+  const loadRegistroForEdit = (registro: DiarioRegistro) => {
+    setEditingId(registro.id);
+    setClima(registro.clima);
+    setTrabalhadores(String(registro.trabalhadores));
+    setObservacoes(registro.observacoes);
+    setProblemas(registro.problemas);
+    setServicos(registro.servicos?.length ? [...registro.servicos] : [{ id: `svc-${Date.now()}`, descricao: registro.servicosExecutados }]);
+    setMateriaisUsados(registro.materiaisUtilizados ? [...registro.materiaisUtilizados] : []);
+    setDialogOpen(true);
   };
 
   const handleSubmit = () => {
     const hoje = new Date().toISOString().split('T')[0];
     const descGeral = servicos.map(s => s.descricao).filter(Boolean).join('. ') || 'Sem serviços detalhados';
+    const filteredServicos = servicos.filter(s => s.descricao.trim());
+    const filteredMateriais = materiaisUsados.filter(m => m.materialId && m.quantidade > 0);
 
+    if (editingId) {
+      // --- EDIT MODE ---
+      const oldRegistro = registros.find(r => r.id === editingId);
+      
+      // Reverse old material movements (return stock)
+      if (oldRegistro) {
+        for (const oldMat of oldRegistro.materiaisUtilizados) {
+          registrarMovimentacao({
+            id: `mv${Date.now()}-rev-${oldMat.materialId}`,
+            obraId: obra.id,
+            materialId: oldMat.materialId,
+            materialNome: oldMat.materialNome,
+            tipo: 'entrada',
+            data: hoje,
+            quantidade: oldMat.quantidade,
+            origemDestino: `Estorno - Edição Diário ${formatDate(oldRegistro.data)}`,
+            responsavel: user?.name || '',
+            observacoes: 'Estorno automático por edição de registro',
+          });
+        }
+      }
+
+      // Register new material movements
+      for (const matUsado of filteredMateriais) {
+        registrarMovimentacao({
+          id: `mv${Date.now()}-${matUsado.materialId}`,
+          obraId: obra.id,
+          materialId: matUsado.materialId,
+          materialNome: matUsado.materialNome,
+          tipo: 'saida',
+          data: hoje,
+          quantidade: matUsado.quantidade,
+          origemDestino: `Diário de Obra - ${oldRegistro ? formatDate(oldRegistro.data) : hoje}`,
+          responsavel: user?.name || '',
+          observacoes: 'Registro automático via Diário de Obra (edição)',
+        });
+      }
+
+      setRegistros(registros.map(r => r.id === editingId ? {
+        ...r,
+        clima,
+        trabalhadores: parseInt(trabalhadores) || 0,
+        servicosExecutados: descGeral,
+        servicos: filteredServicos,
+        materiaisUtilizados: filteredMateriais,
+        observacoes,
+        problemas,
+      } : r));
+
+      setDialogOpen(false);
+      resetForm();
+      return;
+    }
+
+    // --- CREATE MODE ---
     const novo: DiarioRegistro = {
       id: `d${Date.now()}`,
       obraId: obra.id,
@@ -126,8 +196,8 @@ export default function DiarioPage() {
       clima,
       trabalhadores: parseInt(trabalhadores) || 0,
       servicosExecutados: descGeral,
-      servicos: servicos.filter(s => s.descricao.trim()),
-      materiaisUtilizados: materiaisUsados.filter(m => m.materialId && m.quantidade > 0),
+      servicos: filteredServicos,
+      materiaisUtilizados: filteredMateriais,
       observacoes,
       problemas,
       fotos: [],
@@ -150,11 +220,9 @@ export default function DiarioPage() {
                 const comp = cat.composicoes[compIdx];
                 const accum = getAccumulatedPercent(svc.categoriaId, svc.composicaoId) + svc.percentualAdicionado;
 
-                // Start real date if first time
                 if (!comp.dataInicioReal) {
                   comp.dataInicioReal = hoje;
                 }
-                // Complete if reaches 100%
                 if (accum >= 100) {
                   comp.concluida = true;
                   comp.dataFimReal = hoje;
@@ -162,14 +230,12 @@ export default function DiarioPage() {
               }
             }
 
-            // Update category status
             const totalAccum = getAccumulatedPercent(svc.categoriaId) + (svc.composicaoId ? 0 : svc.percentualAdicionado);
             if (!cat.dataInicioReal) {
               cat.dataInicioReal = hoje;
               cat.statusCronograma = 'em_andamento';
             }
 
-            // Recalculate category percentage
             const catPercent = cat.composicoes.length > 0
               ? cat.composicoes.reduce((sum, comp) => {
                   const compAccum = getAccumulatedPercent(cat.id, comp.id) +
@@ -245,7 +311,7 @@ export default function DiarioPage() {
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Novo Registro do Diário</DialogTitle>
+                <DialogTitle>{editingId ? 'Editar Registro do Diário' : 'Novo Registro do Diário'}</DialogTitle>
               </DialogHeader>
               <div className="space-y-5 pt-2">
                 {/* Basic info */}
@@ -445,7 +511,7 @@ export default function DiarioPage() {
                 </div>
 
                 <Button onClick={handleSubmit} className="w-full" disabled={servicos.filter(s => s.descricao.trim()).length === 0}>
-                  Salvar Registro
+                  {editingId ? 'Salvar Alterações' : 'Salvar Registro'}
                 </Button>
               </div>
             </DialogContent>
@@ -477,6 +543,11 @@ export default function DiarioPage() {
                   }>
                     {statusDiarioLabels[registro.status]}
                   </Badge>
+                  {canCreate && registro.status !== 'aprovado' && (
+                    <Button size="sm" variant="ghost" onClick={() => loadRegistroForEdit(registro)}>
+                      <Pencil className="h-3.5 w-3.5 mr-1" /> Editar
+                    </Button>
+                  )}
                   {canApprove && registro.status === 'pendente' && (
                     <Button size="sm" variant="outline" onClick={() => handleApprove(registro.id)}>
                       Aprovar
