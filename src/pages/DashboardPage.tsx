@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useObraSelection } from '@/contexts/ObraSelectionContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useObras } from '@/contexts/ObrasContext';
 import { useOrcamento } from '@/contexts/OrcamentoContext';
 import { useEstoque } from '@/contexts/EstoqueContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -15,10 +16,33 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  mockOrcamentoItens, mockCronograma, mockDiario,
-  mockMateriais, mockMovimentacoes, formatCurrency, formatDate,
+  formatCurrency, formatDate,
   statusEtapaLabels, statusDiarioLabels, climaLabels
 } from '@/data/mockData';
+
+interface DiarioRow {
+  id: string;
+  data: string;
+  clima: string;
+  trabalhadores: number;
+  servicos_executados: string | null;
+  problemas: string | null;
+  observacoes: string | null;
+  status: string;
+  usuario_nome: string;
+  obra_id: string;
+  user_id: string;
+}
+
+function useDiarioRegistros(obraId?: string) {
+  const [registros, setRegistros] = useState<DiarioRow[]>([]);
+  useEffect(() => {
+    if (!obraId) return;
+    supabase.from('diario_registros').select('*').eq('obra_id', obraId).order('data', { ascending: false })
+      .then(({ data }) => { if (data) setRegistros(data as DiarioRow[]); });
+  }, [obraId]);
+  return registros;
+}
 
 function GestorDashboard() {
   const { obras } = useObras();
@@ -26,6 +50,7 @@ function GestorDashboard() {
   const { getMateriaisByObra } = useEstoque();
   const { selectedObraId, setSelectedObraId } = useObraSelection();
   const obra = obras.find(o => o.id === selectedObraId) || obras[0];
+  const diarioRegistros = useDiarioRegistros(obra?.id);
 
   if (!obra) {
     return (
@@ -74,7 +99,7 @@ function GestorDashboard() {
     if (c.dataFimPrevista && !c.dataFimReal && new Date() > new Date(c.dataFimPrevista)) return true;
     return false;
   }).length;
-  const registrosPendentes = mockDiario.filter(d => d.obraId === obra.id && d.status === 'pendente').length;
+  const registrosPendentes = diarioRegistros.filter(d => d.status === 'pendente').length;
   const totalAlertas = materiaisBaixo + registrosPendentes + etapasAtrasadas;
 
   return (
@@ -241,14 +266,14 @@ function GestorDashboard() {
             <CardTitle className="text-base">Diário Recente</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {mockDiario.slice(0, 3).map(d => (
+            {diarioRegistros.slice(0, 3).map(d => (
               <div key={d.id} className="flex items-start justify-between border-b border-border pb-2 last:border-0">
                 <div>
-                  <p className="text-sm font-medium text-foreground">{formatDate(d.data)} · {climaLabels[d.clima]}</p>
-                  <p className="text-xs text-muted-foreground line-clamp-1">{d.servicosExecutados}</p>
+                  <p className="text-sm font-medium text-foreground">{formatDate(d.data)} · {climaLabels[d.clima as keyof typeof climaLabels]}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-1">{d.servicos_executados}</p>
                 </div>
                 <Badge variant={d.status === 'aprovado' ? 'default' : 'secondary'} className={d.status === 'aprovado' ? 'bg-success/10 text-success border-0' : 'bg-warning/10 text-warning border-0'}>
-                  {statusDiarioLabels[d.status]}
+                  {statusDiarioLabels[d.status as keyof typeof statusDiarioLabels]}
                 </Badge>
               </div>
             ))}
@@ -261,9 +286,14 @@ function GestorDashboard() {
 
 function FuncionarioDashboard() {
   const { obras } = useObras();
+  const { getOrcamento } = useOrcamento();
+  const { user } = useAuth();
   const obra = obras[0];
-  const meusRegistros = mockDiario.filter(d => d.usuarioId === 'u2');
-  const etapasAndamento = mockCronograma.filter(e => e.obraId === obra.id && e.status === 'em_andamento');
+  const diarioRegistros = useDiarioRegistros(obra?.id);
+  const meusRegistros = diarioRegistros.filter(d => d.user_id === user?.id);
+  const orcamento = obra ? getOrcamento(obra.id) : null;
+  const categorias = orcamento?.categorias || [];
+  const etapasAndamento = categorias.filter(c => c.statusCronograma === 'em_andamento');
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -310,9 +340,9 @@ function FuncionarioDashboard() {
             <div key={e.id} className="space-y-1">
               <div className="flex justify-between text-sm">
                 <span className="font-medium text-foreground">{e.nome}</span>
-                <span className="text-muted-foreground">{e.percentual}%</span>
+                <span className="text-muted-foreground">{e.percentualCronograma || 0}%</span>
               </div>
-              <Progress value={e.percentual} className="h-1.5" />
+              <Progress value={e.percentualCronograma || 0} className="h-1.5" />
             </div>
           ))}
         </CardContent>
@@ -327,10 +357,10 @@ function FuncionarioDashboard() {
             <div key={d.id} className="flex items-center justify-between border-b border-border pb-2 last:border-0">
               <div>
                 <p className="text-sm font-medium text-foreground">{formatDate(d.data)}</p>
-                <p className="text-xs text-muted-foreground line-clamp-1">{d.servicosExecutados}</p>
+                <p className="text-xs text-muted-foreground line-clamp-1">{d.servicos_executados}</p>
               </div>
               <Badge variant="secondary" className={d.status === 'aprovado' ? 'bg-success/10 text-success border-0' : 'bg-warning/10 text-warning border-0'}>
-                {statusDiarioLabels[d.status]}
+                {statusDiarioLabels[d.status as keyof typeof statusDiarioLabels]}
               </Badge>
             </div>
           ))}
@@ -342,11 +372,14 @@ function FuncionarioDashboard() {
 
 function ClienteDashboard() {
   const { obras } = useObras();
+  const { getOrcamento } = useOrcamento();
   const obra = obras[0];
-  const totalPrevisto = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoTotalPrevisto, 0);
-  const totalRealizado = mockOrcamentoItens.filter(i => i.obraId === obra.id).reduce((s, i) => s + i.custoRealizado, 0);
-  const registrosAprovados = mockDiario.filter(d => d.obraId === obra.id && d.status === 'aprovado');
-  const proximasEtapas = mockCronograma.filter(e => e.obraId === obra.id && (e.status === 'em_andamento' || e.status === 'nao_iniciada')).slice(0, 3);
+  const diarioRegistros = useDiarioRegistros(obra?.id);
+  const orcamento = obra ? getOrcamento(obra.id) : null;
+  const categorias = orcamento?.categorias || [];
+  const totalPrevisto = categorias.reduce((s, c) => s + c.precoTotal, 0);
+  const registrosAprovados = diarioRegistros.filter(d => d.status === 'aprovado');
+  const proximasEtapas = categorias.filter(c => c.statusCronograma === 'em_andamento' || c.statusCronograma === 'nao_iniciada').slice(0, 3);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -378,8 +411,8 @@ function ClienteDashboard() {
         </Card>
         <Card className="shadow-card">
           <CardContent className="p-4 text-center">
-            <p className="text-xs text-muted-foreground">Realizado</p>
-            <p className="text-base font-bold text-foreground">{formatCurrency(totalRealizado)}</p>
+            <p className="text-xs text-muted-foreground">Andamento</p>
+            <p className="text-base font-bold text-foreground">{obra?.percentualAndamento || 0}%</p>
           </CardContent>
         </Card>
       </div>
@@ -393,13 +426,13 @@ function ClienteDashboard() {
             <div key={e.id} className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-foreground">{e.nome}</p>
-                <p className="text-xs text-muted-foreground">{formatDate(e.dataInicioPrevista)} → {formatDate(e.dataFimPrevista)}</p>
+                <p className="text-xs text-muted-foreground">{e.dataInicioPrevista ? formatDate(e.dataInicioPrevista) : '—'} → {e.dataFimPrevista ? formatDate(e.dataFimPrevista) : '—'}</p>
               </div>
               <Badge variant="secondary" className={
-                e.status === 'em_andamento' ? 'bg-primary/10 text-primary border-0' :
+                e.statusCronograma === 'em_andamento' ? 'bg-primary/10 text-primary border-0' :
                 'bg-muted text-muted-foreground border-0'
               }>
-                {statusEtapaLabels[e.status]}
+                {e.statusCronograma ? statusEtapaLabels[e.statusCronograma] : 'Não iniciada'}
               </Badge>
             </div>
           ))}
@@ -415,9 +448,9 @@ function ClienteDashboard() {
             <div key={d.id} className="border-b border-border pb-3 last:border-0">
               <div className="flex items-center gap-2 mb-1">
                 <p className="text-sm font-medium text-foreground">{formatDate(d.data)}</p>
-                <span className="text-xs text-muted-foreground">{climaLabels[d.clima]}</span>
+                <span className="text-xs text-muted-foreground">{climaLabels[d.clima as keyof typeof climaLabels]}</span>
               </div>
-              <p className="text-sm text-muted-foreground">{d.servicosExecutados}</p>
+              <p className="text-sm text-muted-foreground">{d.servicos_executados}</p>
               {d.problemas && <p className="text-xs text-destructive mt-1">⚠ {d.problemas}</p>}
             </div>
           ))}

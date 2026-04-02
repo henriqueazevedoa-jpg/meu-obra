@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useObraSelection } from '@/contexts/ObraSelectionContext';
 import { useOrcamento, OrcamentoCategoria, OrcamentoComposicao } from '@/contexts/OrcamentoContext';
@@ -17,8 +18,9 @@ import { Progress } from '@/components/ui/progress';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { mockDiario, formatDate, statusDiarioLabels, climaLabels, DiarioRegistro, DiarioServico, DiarioMaterialUsado } from '@/data/mockData';
+import { formatDate, statusDiarioLabels, climaLabels, DiarioRegistro, DiarioServico, DiarioMaterialUsado } from '@/data/mockData';
 import { Plus, Users, CheckCircle2, Clock, XCircle, Trash2, Link2, Package, Pencil, CalendarIcon, Filter, ChevronDown } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 const statusIcons: Record<string, React.ReactNode> = {
   pendente: <Clock className="h-4 w-4 text-warning" />,
@@ -33,7 +35,8 @@ export default function DiarioPage() {
   const { getMateriaisByObra, registrarMovimentacao } = useEstoque();
   const { selectedObraId: obraId, setSelectedObraId: setObraId } = useObraSelection();
   const obra = obras.find(o => o.id === obraId) || obras[0];
-  const [registros, setRegistros] = useState<DiarioRegistro[]>(mockDiario);
+  const [registros, setRegistros] = useState<DiarioRegistro[]>([]);
+  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -47,9 +50,69 @@ export default function DiarioPage() {
   const [servicos, setServicos] = useState<DiarioServico[]>([]);
   const [materiaisUsados, setMateriaisUsados] = useState<DiarioMaterialUsado[]>([]);
 
-  const orcamento = getOrcamento(obra.id);
+  const orcamento = obra ? getOrcamento(obra.id) : null;
   const categorias = orcamento?.categorias || [];
-  const materiaisObra = getMateriaisByObra(obra.id);
+  const materiaisObra = obra ? getMateriaisByObra(obra.id) : [];
+
+  // Fetch registros from Supabase
+  const fetchRegistros = useCallback(async () => {
+    if (!obra) return;
+    setLoading(true);
+
+    const { data: regs, error } = await supabase
+      .from('diario_registros')
+      .select('*')
+      .eq('obra_id', obra.id)
+      .order('data', { ascending: false });
+
+    if (error || !regs) {
+      setLoading(false);
+      return;
+    }
+
+    // Fetch servicos and materiais for all registros
+    const regIds = regs.map(r => r.id);
+    const [{ data: svcs }, { data: mats }] = await Promise.all([
+      supabase.from('diario_servicos').select('*').in('registro_id', regIds.length > 0 ? regIds : ['_none']),
+      supabase.from('diario_materiais').select('*').in('registro_id', regIds.length > 0 ? regIds : ['_none']),
+    ]);
+
+    const mapped: DiarioRegistro[] = regs.map(r => ({
+      id: r.id,
+      obraId: r.obra_id,
+      data: r.data,
+      usuario: r.usuario_nome,
+      usuarioId: r.user_id,
+      clima: r.clima as DiarioRegistro['clima'],
+      trabalhadores: r.trabalhadores,
+      servicosExecutados: r.servicos_executados || '',
+      servicos: (svcs || []).filter(s => s.registro_id === r.id).map(s => ({
+        id: s.id,
+        descricao: s.descricao,
+        categoriaId: s.categoria_id || undefined,
+        composicaoId: s.composicao_id || undefined,
+        percentualAdicionado: s.percentual_adicionado ? Number(s.percentual_adicionado) : undefined,
+      })),
+      materiaisUtilizados: (mats || []).filter(m => m.registro_id === r.id).map(m => ({
+        id: m.id,
+        materialId: m.material_id || '',
+        materialNome: m.material_nome,
+        unidade: m.unidade || '',
+        quantidade: Number(m.quantidade),
+      })),
+      observacoes: r.observacoes || '',
+      problemas: r.problemas || '',
+      fotos: r.fotos || [],
+      status: r.status as DiarioRegistro['status'],
+    }));
+
+    setRegistros(mapped);
+    setLoading(false);
+  }, [obra?.id]);
+
+  useEffect(() => {
+    fetchRegistros();
+  }, [fetchRegistros]);
 
   // Filters
   const [filterEtapa, setFilterEtapa] = useState('_all');
@@ -59,7 +122,7 @@ export default function DiarioPage() {
 
   const hasActiveFilters = filterEtapa !== '_all' || filterMaterial !== '_all' || filterStatus !== '_all' || filterProblemas !== '_all';
 
-  const obraRegistros = registros.filter(r => r.obraId === obra.id);
+  const obraRegistros = registros;
   const visibleRegistros = user?.role === 'cliente'
     ? obraRegistros.filter(r => r.status === 'aprovado')
     : obraRegistros;
@@ -162,167 +225,194 @@ export default function DiarioPage() {
     setDialogOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!obra || !user) return;
     const hoje = format(dataRegistro, 'yyyy-MM-dd');
     const descGeral = servicos.map(s => s.descricao).filter(Boolean).join('. ') || 'Sem serviços detalhados';
     const filteredServicos = servicos.filter(s => s.descricao.trim());
     const filteredMateriais = materiaisUsados.filter(m => m.materialId && m.quantidade > 0);
 
     if (editingId) {
-      const oldRegistro = registros.find(r => r.id === editingId);
-      
-      if (oldRegistro) {
-        for (const oldMat of oldRegistro.materiaisUtilizados) {
-          registrarMovimentacao({
-            id: `mv${Date.now()}-rev-${oldMat.materialId}`,
-            obraId: obra.id,
-            materialId: oldMat.materialId,
-            materialNome: oldMat.materialNome,
-            tipo: 'entrada',
-            data: hoje,
-            quantidade: oldMat.quantidade,
-            origemDestino: `Estorno - Edição Diário ${formatDate(oldRegistro.data)}`,
-            responsavel: user?.name || '',
-            observacoes: 'Estorno automático por edição de registro',
-          });
-        }
+      // UPDATE existing registro
+      const { error } = await supabase.from('diario_registros').update({
+        data: hoje,
+        clima,
+        trabalhadores: parseInt(trabalhadores) || 0,
+        servicos_executados: descGeral,
+        observacoes,
+        problemas,
+      }).eq('id', editingId);
+
+      if (error) {
+        toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+        return;
       }
 
+      // Delete old servicos and materiais, re-insert
+      await supabase.from('diario_servicos').delete().eq('registro_id', editingId);
+      await supabase.from('diario_materiais').delete().eq('registro_id', editingId);
+
+      if (filteredServicos.length > 0) {
+        await supabase.from('diario_servicos').insert(
+          filteredServicos.map(s => ({
+            registro_id: editingId,
+            descricao: s.descricao,
+            categoria_id: s.categoriaId || null,
+            composicao_id: s.composicaoId || null,
+            percentual_adicionado: s.percentualAdicionado || 0,
+          }))
+        );
+      }
+
+      if (filteredMateriais.length > 0) {
+        await supabase.from('diario_materiais').insert(
+          filteredMateriais.map(m => ({
+            registro_id: editingId,
+            material_id: m.materialId || null,
+            material_nome: m.materialNome,
+            unidade: m.unidade,
+            quantidade: m.quantidade,
+          }))
+        );
+      }
+
+      toast({ title: 'Registro atualizado!' });
+    } else {
+      // CREATE new registro
+      const { data: newReg, error } = await supabase.from('diario_registros').insert({
+        obra_id: obra.id,
+        user_id: user.id,
+        data: hoje,
+        clima,
+        trabalhadores: parseInt(trabalhadores) || 0,
+        servicos_executados: descGeral,
+        observacoes,
+        problemas,
+        usuario_nome: user.name,
+        status: 'pendente',
+      }).select().single();
+
+      if (error || !newReg) {
+        toast({ title: 'Erro ao criar registro', description: error?.message, variant: 'destructive' });
+        return;
+      }
+
+      if (filteredServicos.length > 0) {
+        await supabase.from('diario_servicos').insert(
+          filteredServicos.map(s => ({
+            registro_id: newReg.id,
+            descricao: s.descricao,
+            categoria_id: s.categoriaId || null,
+            composicao_id: s.composicaoId || null,
+            percentual_adicionado: s.percentualAdicionado || 0,
+          }))
+        );
+      }
+
+      if (filteredMateriais.length > 0) {
+        await supabase.from('diario_materiais').insert(
+          filteredMateriais.map(m => ({
+            registro_id: newReg.id,
+            material_id: m.materialId || null,
+            material_nome: m.materialNome,
+            unidade: m.unidade,
+            quantidade: m.quantidade,
+          }))
+        );
+      }
+
+      // Register stock movements for new materials
       for (const matUsado of filteredMateriais) {
         registrarMovimentacao({
-          id: `mv${Date.now()}-${matUsado.materialId}`,
+          id: crypto.randomUUID(),
           obraId: obra.id,
           materialId: matUsado.materialId,
           materialNome: matUsado.materialNome,
           tipo: 'saida',
           data: hoje,
           quantidade: matUsado.quantidade,
-          origemDestino: `Diário de Obra - ${oldRegistro ? formatDate(oldRegistro.data) : hoje}`,
-          responsavel: user?.name || '',
-          observacoes: 'Registro automático via Diário de Obra (edição)',
+          origemDestino: `Diário de Obra - ${hoje}`,
+          responsavel: user.name,
+          observacoes: 'Registro automático via Diário de Obra',
         });
       }
 
-      setRegistros(registros.map(r => r.id === editingId ? {
-        ...r,
-        data: hoje,
-        clima,
-        trabalhadores: parseInt(trabalhadores) || 0,
-        servicosExecutados: descGeral,
-        servicos: filteredServicos,
-        materiaisUtilizados: filteredMateriais,
-        observacoes,
-        problemas,
-      } : r));
+      // Update cronograma based on service links
+      if (orcamento) {
+        const updatedCategorias = [...orcamento.categorias.map(c => ({ ...c, composicoes: c.composicoes.map(comp => ({ ...comp })) }))];
 
-      setDialogOpen(false);
-      resetForm();
-      return;
-    }
+        for (const svc of filteredServicos) {
+          if (svc.categoriaId && svc.percentualAdicionado) {
+            const catIdx = updatedCategorias.findIndex(c => c.id === svc.categoriaId);
+            if (catIdx >= 0) {
+              const cat = updatedCategorias[catIdx];
 
-    // --- CREATE MODE ---
-    const novo: DiarioRegistro = {
-      id: `d${Date.now()}`,
-      obraId: obra.id,
-      data: hoje,
-      usuario: user?.name || '',
-      usuarioId: user?.id || '',
-      clima,
-      trabalhadores: parseInt(trabalhadores) || 0,
-      servicosExecutados: descGeral,
-      servicos: filteredServicos,
-      materiaisUtilizados: filteredMateriais,
-      observacoes,
-      problemas,
-      fotos: [],
-      status: 'pendente',
-    };
-
-    // Update cronograma based on service links
-    if (orcamento) {
-      const updatedCategorias = [...orcamento.categorias.map(c => ({ ...c, composicoes: c.composicoes.map(comp => ({ ...comp })) }))];
-
-      for (const svc of novo.servicos) {
-        if (svc.categoriaId && svc.percentualAdicionado) {
-          const catIdx = updatedCategorias.findIndex(c => c.id === svc.categoriaId);
-          if (catIdx >= 0) {
-            const cat = updatedCategorias[catIdx];
-
-            if (svc.composicaoId) {
-              const compIdx = cat.composicoes.findIndex(c => c.id === svc.composicaoId);
-              if (compIdx >= 0) {
-                const comp = cat.composicoes[compIdx];
-                const accum = getAccumulatedPercent(svc.categoriaId, svc.composicaoId) + svc.percentualAdicionado;
-
-                if (!comp.dataInicioReal) {
-                  comp.dataInicioReal = hoje;
-                }
-                if (accum >= 100) {
-                  comp.concluida = true;
-                  comp.dataFimReal = hoje;
+              if (svc.composicaoId) {
+                const compIdx = cat.composicoes.findIndex(c => c.id === svc.composicaoId);
+                if (compIdx >= 0) {
+                  const comp = cat.composicoes[compIdx];
+                  const accum = getAccumulatedPercent(svc.categoriaId, svc.composicaoId) + svc.percentualAdicionado;
+                  if (!comp.dataInicioReal) comp.dataInicioReal = hoje;
+                  if (accum >= 100) { comp.concluida = true; comp.dataFimReal = hoje; }
                 }
               }
-            }
 
-            const totalAccum = getAccumulatedPercent(svc.categoriaId) + (svc.composicaoId ? 0 : svc.percentualAdicionado);
-            if (!cat.dataInicioReal) {
-              cat.dataInicioReal = hoje;
-              cat.statusCronograma = 'em_andamento';
-            }
+              if (!cat.dataInicioReal) { cat.dataInicioReal = hoje; cat.statusCronograma = 'em_andamento'; }
+              const catPercent = cat.composicoes.length > 0
+                ? cat.composicoes.reduce((sum, comp) => {
+                    const compAccum = getAccumulatedPercent(cat.id, comp.id) +
+                      (filteredServicos.find(s => s.composicaoId === comp.id)?.percentualAdicionado || 0);
+                    const weight = comp.pesoCronograma || (100 / cat.composicoes.length);
+                    return sum + (Math.min(100, compAccum) / 100) * weight;
+                  }, 0)
+                : (cat.percentualCronograma || 0) + (svc.composicaoId ? 0 : svc.percentualAdicionado);
 
-            const catPercent = cat.composicoes.length > 0
-              ? cat.composicoes.reduce((sum, comp) => {
-                  const compAccum = getAccumulatedPercent(cat.id, comp.id) +
-                    (novo.servicos.find(s => s.composicaoId === comp.id)?.percentualAdicionado || 0);
-                  const weight = comp.pesoCronograma || (100 / cat.composicoes.length);
-                  return sum + (Math.min(100, compAccum) / 100) * weight;
-                }, 0)
-              : totalAccum;
-
-            cat.percentualCronograma = Math.min(100, catPercent);
-
-            if (cat.percentualCronograma >= 100) {
-              cat.statusCronograma = 'concluida';
-              cat.dataFimReal = hoje;
+              cat.percentualCronograma = Math.min(100, catPercent);
+              if (cat.percentualCronograma >= 100) { cat.statusCronograma = 'concluida'; cat.dataFimReal = hoje; }
             }
           }
         }
+        saveOrcamento({ ...orcamento, categorias: updatedCategorias });
       }
 
-      saveOrcamento({ ...orcamento, categorias: updatedCategorias });
+      toast({ title: 'Registro criado com sucesso!' });
     }
 
-    // Register stock movements
-    for (const matUsado of novo.materiaisUtilizados) {
-      registrarMovimentacao({
-        id: `mv${Date.now()}-${matUsado.materialId}`,
-        obraId: obra.id,
-        materialId: matUsado.materialId,
-        materialNome: matUsado.materialNome,
-        tipo: 'saida',
-        data: hoje,
-        quantidade: matUsado.quantidade,
-        origemDestino: `Diário de Obra - ${hoje}`,
-        responsavel: user?.name || '',
-        observacoes: `Registro automático via Diário de Obra`,
-      });
-    }
-
-    setRegistros([novo, ...registros]);
     setDialogOpen(false);
     resetForm();
+    fetchRegistros();
   };
 
-  const handleApprove = (id: string) => {
-    setRegistros(registros.map(r => r.id === id ? { ...r, status: 'aprovado' as const } : r));
+  const handleApprove = async (id: string) => {
+    const { error } = await supabase.from('diario_registros').update({ status: 'aprovado' }).eq('id', id);
+    if (!error) {
+      setRegistros(registros.map(r => r.id === id ? { ...r, status: 'aprovado' as const } : r));
+      toast({ title: 'Registro aprovado!' });
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    const { error } = await supabase.from('diario_registros').update({ status: 'rejeitado' }).eq('id', id);
+    if (!error) {
+      setRegistros(registros.map(r => r.id === id ? { ...r, status: 'rejeitado' as const } : r));
+      toast({ title: 'Registro rejeitado.' });
+    }
   };
 
   const canCreate = hasPermission('diario:create');
   const canApprove = hasPermission('diario:approve');
 
+  if (!obra) {
+    return (
+      <div className="flex items-center justify-center py-20 text-muted-foreground text-sm">
+        Nenhuma obra cadastrada.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
-      {/* Header - compact on mobile */}
+      {/* Header */}
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0 flex-1">
           <h1 className="text-lg sm:text-2xl font-bold text-foreground">Diário de Obra</h1>
@@ -350,7 +440,7 @@ export default function DiarioPage() {
                 <DialogTitle className="text-base sm:text-lg">{editingId ? 'Editar Registro' : 'Novo Registro'}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 pt-2">
-                {/* Basic info - stack on mobile */}
+                {/* Basic info */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1.5">
                     <label className="text-xs sm:text-sm font-medium text-foreground">Data</label>
@@ -362,15 +452,7 @@ export default function DiarioPage() {
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={dataRegistro}
-                          onSelect={(d) => d && setDataRegistro(d)}
-                          disabled={(date) => date > new Date()}
-                          initialFocus
-                          locale={ptBR}
-                          className={cn("p-3 pointer-events-auto")}
-                        />
+                        <Calendar mode="single" selected={dataRegistro} onSelect={(d) => d && setDataRegistro(d)} disabled={(date) => date > new Date()} initialFocus locale={ptBR} className={cn("p-3 pointer-events-auto")} />
                       </PopoverContent>
                     </Popover>
                   </div>
@@ -394,7 +476,7 @@ export default function DiarioPage() {
                   </div>
                 </div>
 
-                {/* === SERVIÇOS EXECUTADOS === */}
+                {/* Serviços */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <label className="text-sm font-semibold text-foreground">Serviços Executados</label>
@@ -402,77 +484,42 @@ export default function DiarioPage() {
                       <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
                     </Button>
                   </div>
-
-                  {servicos.length === 0 && (
-                    <p className="text-sm text-muted-foreground italic">Nenhum serviço adicionado.</p>
-                  )}
-
+                  {servicos.length === 0 && <p className="text-sm text-muted-foreground italic">Nenhum serviço adicionado.</p>}
                   {servicos.map((svc, idx) => {
                     const linkedCat = svc.categoriaId ? categorias.find(c => c.id === svc.categoriaId) : null;
                     const accum = svc.categoriaId ? getAccumulatedPercent(svc.categoriaId, svc.composicaoId) : 0;
-
                     return (
                       <div key={svc.id} className="border border-border rounded-lg p-3 space-y-3">
                         <div className="flex items-start gap-2">
                           <div className="flex-1">
-                            <Input
-                              placeholder="Descrição do serviço..."
-                              value={svc.descricao}
-                              onChange={e => updateServico(idx, { descricao: e.target.value })}
-                              className="h-10"
-                            />
+                            <Input placeholder="Descrição do serviço..." value={svc.descricao} onChange={e => updateServico(idx, { descricao: e.target.value })} className="h-10" />
                           </div>
                           <Button type="button" variant="ghost" size="icon" className="shrink-0 h-10 w-10" onClick={() => removeServico(idx)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
                         </div>
-
-                        {/* Link to etapa */}
                         <div className="space-y-2">
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Link2 className="h-3.5 w-3.5" />
-                            <span>Vincular a etapa (opcional)</span>
+                            <Link2 className="h-3.5 w-3.5" /><span>Vincular a etapa (opcional)</span>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <Select
-                              value={svc.categoriaId || '_none'}
-                              onValueChange={v => updateServico(idx, {
-                                categoriaId: v === '_none' ? undefined : v,
-                                composicaoId: undefined,
-                                percentualAdicionado: undefined,
-                              })}
-                            >
-                              <SelectTrigger className="text-xs h-9">
-                                <SelectValue placeholder="Categoria..." />
-                              </SelectTrigger>
+                            <Select value={svc.categoriaId || '_none'} onValueChange={v => updateServico(idx, { categoriaId: v === '_none' ? undefined : v, composicaoId: undefined, percentualAdicionado: undefined })}>
+                              <SelectTrigger className="text-xs h-9"><SelectValue placeholder="Categoria..." /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="_none">Sem vínculo</SelectItem>
-                                {categorias.map(cat => (
-                                  <SelectItem key={cat.id} value={cat.id}>{cat.nome}</SelectItem>
-                                ))}
+                                {categorias.map(cat => (<SelectItem key={cat.id} value={cat.id}>{cat.nome}</SelectItem>))}
                               </SelectContent>
                             </Select>
-
                             {svc.categoriaId && linkedCat && linkedCat.composicoes.length > 0 && (
-                              <Select
-                                value={svc.composicaoId || '_cat_only'}
-                                onValueChange={v => updateServico(idx, {
-                                  composicaoId: v === '_cat_only' ? undefined : v,
-                                })}
-                              >
-                                <SelectTrigger className="text-xs h-9">
-                                  <SelectValue placeholder="Composição..." />
-                                </SelectTrigger>
+                              <Select value={svc.composicaoId || '_cat_only'} onValueChange={v => updateServico(idx, { composicaoId: v === '_cat_only' ? undefined : v })}>
+                                <SelectTrigger className="text-xs h-9"><SelectValue placeholder="Composição..." /></SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="_cat_only">Categoria geral</SelectItem>
-                                  {linkedCat.composicoes.map(comp => (
-                                    <SelectItem key={comp.id} value={comp.id}>{comp.descricao}</SelectItem>
-                                  ))}
+                                  {linkedCat.composicoes.map(comp => (<SelectItem key={comp.id} value={comp.id}>{comp.descricao}</SelectItem>))}
                                 </SelectContent>
                               </Select>
                             )}
                           </div>
-
                           {svc.categoriaId && (
                             <div className="bg-muted/50 rounded-md p-2 space-y-2">
                               <div className="flex items-center justify-between text-xs">
@@ -482,16 +529,7 @@ export default function DiarioPage() {
                               <Progress value={accum} className="h-2" />
                               <div className="flex items-center gap-2">
                                 <label className="text-xs text-muted-foreground whitespace-nowrap">% a adicionar:</label>
-                                <Input
-                                  type="number"
-                                  min={0}
-                                  max={100 - accum}
-                                  step={0.5}
-                                  className="h-9 text-xs w-20"
-                                  placeholder="0"
-                                  value={svc.percentualAdicionado || ''}
-                                  onChange={e => updateServico(idx, { percentualAdicionado: parseFloat(e.target.value) || 0 })}
-                                />
+                                <Input type="number" min={0} max={100 - accum} step={0.5} className="h-9 text-xs w-20" placeholder="0" value={svc.percentualAdicionado || ''} onChange={e => updateServico(idx, { percentualAdicionado: parseFloat(e.target.value) || 0 })} />
                                 <span className="text-xs text-muted-foreground">%</span>
                               </div>
                             </div>
@@ -502,21 +540,13 @@ export default function DiarioPage() {
                   })}
                 </div>
 
-                {/* === MATERIAIS UTILIZADOS === */}
+                {/* Materiais */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                      <Package className="h-4 w-4" /> Materiais
-                    </label>
-                    <Button type="button" variant="outline" size="sm" className="h-8" onClick={addMaterial}>
-                      <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
-                    </Button>
+                    <label className="text-sm font-semibold text-foreground flex items-center gap-1.5"><Package className="h-4 w-4" /> Materiais</label>
+                    <Button type="button" variant="outline" size="sm" className="h-8" onClick={addMaterial}><Plus className="h-3.5 w-3.5 mr-1" /> Adicionar</Button>
                   </div>
-
-                  {materiaisUsados.length === 0 && (
-                    <p className="text-sm text-muted-foreground italic">Nenhum material adicionado. (Opcional)</p>
-                  )}
-
+                  {materiaisUsados.length === 0 && <p className="text-sm text-muted-foreground italic">Nenhum material adicionado. (Opcional)</p>}
                   {materiaisUsados.map((matU, idx) => {
                     const matInfo = materiaisObra.find(m => m.id === matU.materialId);
                     return (
@@ -524,34 +554,18 @@ export default function DiarioPage() {
                         <div className="flex items-center gap-2">
                           <div className="flex-1">
                             <Select value={matU.materialId || '_none'} onValueChange={v => v !== '_none' && updateMaterial(idx, v)}>
-                              <SelectTrigger className="text-xs h-9">
-                                <SelectValue placeholder="Selecionar material..." />
-                              </SelectTrigger>
+                              <SelectTrigger className="text-xs h-9"><SelectValue placeholder="Selecionar material..." /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="_none">Selecionar...</SelectItem>
-                                {materiaisObra.map(m => (
-                                  <SelectItem key={m.id} value={m.id}>
-                                    {m.nome} ({m.estoqueAtual} {m.unidade})
-                                  </SelectItem>
-                                ))}
+                                {materiaisObra.map(m => (<SelectItem key={m.id} value={m.id}>{m.nome} ({m.estoqueAtual} {m.unidade})</SelectItem>))}
                               </SelectContent>
                             </Select>
                           </div>
-                          <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => removeMaterial(idx)}>
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </Button>
+                          <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => removeMaterial(idx)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                         </div>
                         <div className="flex items-center gap-2 pl-1">
                           <label className="text-xs text-muted-foreground">Qtd:</label>
-                          <Input
-                            type="number"
-                            min={0}
-                            max={matInfo?.estoqueAtual}
-                            className="h-9 text-xs w-24"
-                            placeholder="0"
-                            value={matU.quantidade || ''}
-                            onChange={e => updateMaterialQty(idx, parseFloat(e.target.value) || 0)}
-                          />
+                          <Input type="number" min={0} max={matInfo?.estoqueAtual} className="h-9 text-xs w-24" placeholder="0" value={matU.quantidade || ''} onChange={e => updateMaterialQty(idx, parseFloat(e.target.value) || 0)} />
                           <span className="text-xs text-muted-foreground">{matU.unidade}</span>
                         </div>
                       </div>
@@ -559,7 +573,7 @@ export default function DiarioPage() {
                   })}
                 </div>
 
-                {/* Observações e Problemas */}
+                {/* Obs + Problems */}
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-foreground">Observações</label>
                   <Textarea placeholder="Observações gerais..." rows={2} value={observacoes} onChange={e => setObservacoes(e.target.value)} />
@@ -583,52 +597,35 @@ export default function DiarioPage() {
         )}
       </div>
 
-      {/* Filters - collapsible on mobile */}
+      {/* Filters */}
       <div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full sm:hidden h-9 justify-between"
-          onClick={() => setFiltersOpen(!filtersOpen)}
-        >
+        <Button variant="outline" size="sm" className="w-full sm:hidden h-9 justify-between" onClick={() => setFiltersOpen(!filtersOpen)}>
           <span className="flex items-center gap-1.5 text-xs">
-            <Filter className="h-3.5 w-3.5" />
-            Filtros
+            <Filter className="h-3.5 w-3.5" /> Filtros
             {hasActiveFilters && <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">Ativo</Badge>}
           </span>
           <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", filtersOpen && "rotate-180")} />
         </Button>
-
         <Card className={cn("shadow-card mt-2 sm:mt-0", !filtersOpen && "hidden sm:block")}>
           <CardContent className="p-3">
             <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
               <span className="text-xs font-medium text-muted-foreground hidden sm:inline">Filtros:</span>
               <Select value={filterEtapa} onValueChange={setFilterEtapa}>
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue placeholder="Etapa..." />
-                </SelectTrigger>
+                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Etapa..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="_all">Todas etapas</SelectItem>
-                  {categorias.map(cat => (
-                    <SelectItem key={cat.id} value={cat.id}>{cat.nome}</SelectItem>
-                  ))}
+                  {categorias.map(cat => (<SelectItem key={cat.id} value={cat.id}>{cat.nome}</SelectItem>))}
                 </SelectContent>
               </Select>
               <Select value={filterMaterial} onValueChange={setFilterMaterial}>
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue placeholder="Material..." />
-                </SelectTrigger>
+                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Material..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="_all">Todos materiais</SelectItem>
-                  {materiaisObra.map(m => (
-                    <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
-                  ))}
+                  {materiaisObra.map(m => (<SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>))}
                 </SelectContent>
               </Select>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue placeholder="Status..." />
-                </SelectTrigger>
+                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Status..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="_all">Todos status</SelectItem>
                   <SelectItem value="aprovado">✅ Aprovado</SelectItem>
@@ -637,9 +634,7 @@ export default function DiarioPage() {
                 </SelectContent>
               </Select>
               <Select value={filterProblemas} onValueChange={setFilterProblemas}>
-                <SelectTrigger className="h-9 text-xs">
-                  <SelectValue placeholder="Problemas..." />
-                </SelectTrigger>
+                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Problemas..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="_all">Todos</SelectItem>
                   <SelectItem value="com">Com problemas</SelectItem>
@@ -656,26 +651,31 @@ export default function DiarioPage() {
         </Card>
       </div>
 
-      {/* Timeline - cards otimizados para mobile */}
-      <div className="space-y-3">
-        {sortedRegistros.map(registro => (
-          <Card key={registro.id} className="shadow-card">
-            <CardContent className="p-3 sm:p-5">
-              {/* Header do registro */}
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  {statusIcons[registro.status]}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <p className="text-sm font-semibold text-foreground">{formatDate(registro.data)}</p>
-                      <span className="text-sm">{climaLabels[registro.clima]}</span>
+      {/* Timeline */}
+      {loading ? (
+        <div className="text-center py-12 text-muted-foreground text-sm">Carregando registros...</div>
+      ) : sortedRegistros.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground text-sm">
+          {hasActiveFilters ? 'Nenhum registro encontrado com os filtros aplicados.' : 'Nenhum registro de diário para esta obra.'}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {sortedRegistros.map(registro => (
+            <Card key={registro.id} className="shadow-card">
+              <CardContent className="p-3 sm:p-5">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {statusIcons[registro.status]}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-sm font-semibold text-foreground">{formatDate(registro.data)}</p>
+                        <span className="text-sm">{climaLabels[registro.clima]}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">por {registro.usuario}</p>
                     </div>
-                    <p className="text-xs text-muted-foreground truncate">por {registro.usuario}</p>
                   </div>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
                   <Badge variant="secondary" className={cn(
-                    "text-[10px] px-1.5",
+                    "text-[10px] px-1.5 shrink-0",
                     registro.status === 'aprovado' ? 'bg-success/10 text-success border-0' :
                     registro.status === 'rejeitado' ? 'bg-destructive/10 text-destructive border-0' :
                     'bg-warning/10 text-warning border-0'
@@ -683,90 +683,85 @@ export default function DiarioPage() {
                     {statusDiarioLabels[registro.status]}
                   </Badge>
                 </div>
-              </div>
 
-              {/* Actions row - compact */}
-              <div className="flex items-center gap-1 mb-2">
-                <span className="flex items-center gap-1 text-xs text-muted-foreground mr-auto">
-                  <Users className="h-3 w-3" /> {registro.trabalhadores}
-                </span>
-                {(user?.role === 'gestor' || (canCreate && registro.status !== 'aprovado')) && (
-                  <Button size="sm" variant="ghost" className="h-7 text-xs px-2" onClick={() => loadRegistroForEdit(registro)}>
-                    <Pencil className="h-3 w-3 mr-1" /> Editar
-                  </Button>
-                )}
-                {canApprove && registro.status === 'pendente' && (
-                  <Button size="sm" variant="outline" className="h-7 text-xs px-2" onClick={() => handleApprove(registro.id)}>
-                    Aprovar
-                  </Button>
-                )}
-              </div>
+                <div className="flex items-center gap-1 mb-2">
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground mr-auto">
+                    <Users className="h-3 w-3" /> {registro.trabalhadores}
+                  </span>
+                  {(user?.role === 'gestor' || (canCreate && registro.status !== 'aprovado')) && (
+                    <Button size="sm" variant="ghost" className="h-7 text-xs px-2" onClick={() => loadRegistroForEdit(registro)}>
+                      <Pencil className="h-3 w-3 mr-1" /> Editar
+                    </Button>
+                  )}
+                  {canApprove && registro.status === 'pendente' && (
+                    <>
+                      <Button size="sm" variant="outline" className="h-7 text-xs px-2" onClick={() => handleApprove(registro.id)}>Aprovar</Button>
+                      <Button size="sm" variant="ghost" className="h-7 text-xs px-2 text-destructive" onClick={() => handleReject(registro.id)}>Rejeitar</Button>
+                    </>
+                  )}
+                </div>
 
-              <div className="space-y-2">
-                {/* Serviços individuais */}
-                {registro.servicos && registro.servicos.length > 0 && (
-                  <div>
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Serviços</p>
-                    <div className="space-y-1">
-                      {registro.servicos.map(svc => {
-                        const linkedCat = svc.categoriaId ? categorias.find(c => c.id === svc.categoriaId) : null;
-                        const linkedComp = svc.composicaoId && linkedCat ? linkedCat.composicoes.find(c => c.id === svc.composicaoId) : null;
-                        return (
-                          <div key={svc.id} className="flex flex-wrap items-center gap-1 text-sm">
-                            <span className="text-foreground">• {svc.descricao}</span>
-                            {linkedCat && (
-                              <Badge variant="outline" className="text-[10px] px-1 py-0">
-                                {linkedComp ? linkedComp.descricao : linkedCat.nome}
-                                {svc.percentualAdicionado ? ` +${svc.percentualAdicionado}%` : ''}
-                              </Badge>
-                            )}
-                          </div>
-                        );
-                      })}
+                <div className="space-y-2">
+                  {registro.servicos && registro.servicos.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Serviços</p>
+                      <div className="space-y-1">
+                        {registro.servicos.map(svc => {
+                          const linkedCat = svc.categoriaId ? categorias.find(c => c.id === svc.categoriaId) : null;
+                          const linkedComp = svc.composicaoId && linkedCat ? linkedCat.composicoes.find(c => c.id === svc.composicaoId) : null;
+                          return (
+                            <div key={svc.id} className="flex flex-wrap items-center gap-1 text-sm">
+                              <span className="text-foreground">• {svc.descricao}</span>
+                              {linkedCat && (
+                                <Badge variant="outline" className="text-[10px] px-1 py-0">
+                                  {linkedComp ? linkedComp.descricao : linkedCat.nome}
+                                  {svc.percentualAdicionado ? ` +${svc.percentualAdicionado}%` : ''}
+                                </Badge>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
-
-                {(!registro.servicos || registro.servicos.length === 0) && registro.servicosExecutados && (
-                  <div>
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Serviços</p>
-                    <p className="text-sm text-foreground">{registro.servicosExecutados}</p>
-                  </div>
-                )}
-
-                {/* Materiais utilizados */}
-                {registro.materiaisUtilizados && registro.materiaisUtilizados.length > 0 && (
-                  <div>
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
-                      <Package className="h-3 w-3" /> Materiais
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {registro.materiaisUtilizados.map(mat => (
-                        <Badge key={mat.id} variant="secondary" className="text-[10px]">
-                          {mat.materialNome}: {mat.quantidade} {mat.unidade}
-                        </Badge>
-                      ))}
+                  )}
+                  {(!registro.servicos || registro.servicos.length === 0) && registro.servicosExecutados && (
+                    <div>
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Serviços</p>
+                      <p className="text-sm text-foreground">{registro.servicosExecutados}</p>
                     </div>
-                  </div>
-                )}
-
-                {registro.observacoes && (
-                  <div>
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Observações</p>
-                    <p className="text-xs sm:text-sm text-muted-foreground">{registro.observacoes}</p>
-                  </div>
-                )}
-                {registro.problemas && (
-                  <div className="bg-destructive/5 rounded-md p-2">
-                    <p className="text-[10px] font-medium text-destructive uppercase tracking-wider mb-1">⚠ Problemas</p>
-                    <p className="text-xs sm:text-sm text-destructive">{registro.problemas}</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  )}
+                  {registro.materiaisUtilizados && registro.materiaisUtilizados.length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+                        <Package className="h-3 w-3" /> Materiais
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {registro.materiaisUtilizados.map(mat => (
+                          <Badge key={mat.id} variant="secondary" className="text-[10px]">
+                            {mat.materialNome}: {mat.quantidade} {mat.unidade}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {registro.observacoes && (
+                    <div>
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Observações</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">{registro.observacoes}</p>
+                    </div>
+                  )}
+                  {registro.problemas && (
+                    <div className="bg-destructive/5 rounded-md p-2">
+                      <p className="text-[10px] font-medium text-destructive uppercase tracking-wider mb-1">⚠ Problemas</p>
+                      <p className="text-xs sm:text-sm text-destructive">{registro.problemas}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
