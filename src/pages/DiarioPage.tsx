@@ -43,9 +43,10 @@ export default function DiarioPage() {
   const categorias = orcamento?.categorias || [];
   const materiaisObra = getMateriaisByObra(obra.id);
 
+  const obraRegistros = registros.filter(r => r.obraId === obra.id);
   const visibleRegistros = user?.role === 'cliente'
-    ? registros.filter(r => r.status === 'aprovado')
-    : registros;
+    ? obraRegistros.filter(r => r.status === 'aprovado')
+    : obraRegistros;
   const sortedRegistros = [...visibleRegistros].sort((a, b) => b.data.localeCompare(a.data));
 
   // --- Helpers for etapa progress ---
