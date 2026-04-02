@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ObrasProvider } from "@/contexts/ObrasContext";
 import { OrcamentoProvider } from "@/contexts/OrcamentoContext";
+import { EstoqueProvider } from "@/contexts/EstoqueContext";
 import AppLayout from "@/components/AppLayout";
 import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
@@ -49,7 +50,9 @@ function AppProviders({ children }: { children: React.ReactNode }) {
         <Sonner />
         <AuthProvider>
           <ObrasProvider>
-            <OrcamentoProvider>{children}</OrcamentoProvider>
+            <OrcamentoProvider>
+              <EstoqueProvider>{children}</EstoqueProvider>
+            </OrcamentoProvider>
           </ObrasProvider>
         </AuthProvider>
       </TooltipProvider>

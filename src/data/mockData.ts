@@ -51,6 +51,22 @@ export interface CronogramaEtapa {
   observacoes: string;
 }
 
+export interface DiarioServico {
+  id: string;
+  descricao: string;
+  categoriaId?: string; // linked to OrcamentoCategoria
+  composicaoId?: string; // linked to OrcamentoComposicao
+  percentualAdicionado?: number; // % added to that etapa
+}
+
+export interface DiarioMaterialUsado {
+  id: string;
+  materialId: string;
+  materialNome: string;
+  unidade: string;
+  quantidade: number;
+}
+
 export interface DiarioRegistro {
   id: string;
   obraId: string;
@@ -60,6 +76,8 @@ export interface DiarioRegistro {
   clima: 'sol' | 'nublado' | 'chuva' | 'chuvoso_forte';
   trabalhadores: number;
   servicosExecutados: string;
+  servicos: DiarioServico[];
+  materiaisUtilizados: DiarioMaterialUsado[];
   observacoes: string;
   problemas: string;
   fotos: string[];
@@ -153,14 +171,14 @@ export const mockCronograma: CronogramaEtapa[] = [];
 // ── Mock Diário de Obra ──
 export const mockDiario: DiarioRegistro[] = [
   // Obra 1 – registros recentes
-  { id: 'd1', obraId: 'ob1', data: '2024-08-14', usuario: 'José Silva', usuarioId: 'u2', clima: 'sol', trabalhadores: 9, servicosExecutados: 'Concretagem da laje do 2º pavimento. Cura com manta úmida iniciada.', observacoes: 'Concreto usinado fck 30MPa. Bomba lança operou normalmente.', problemas: '', fotos: [], status: 'aprovado' },
-  { id: 'd2', obraId: 'ob1', data: '2024-08-13', usuario: 'José Silva', usuarioId: 'u2', clima: 'chuva', trabalhadores: 4, servicosExecutados: 'Serviços internos - passagem de tubulação hidráulica no térreo. Instalação de caixas elétricas 4x2.', observacoes: 'Chuva forte pela manhã impediu trabalho externo.', problemas: 'Chuva forte interrompeu serviços externos por 3 horas', fotos: [], status: 'pendente' },
-  { id: 'd3', obraId: 'ob1', data: '2024-08-12', usuario: 'José Silva', usuarioId: 'u2', clima: 'sol', trabalhadores: 8, servicosExecutados: 'Montagem de formas para laje do 2º pavimento. Armação de ferragem da laje.', observacoes: 'Entrega de 80 barras de aço CA-50 12,5mm.', problemas: '', fotos: [], status: 'aprovado' },
-  { id: 'd4', obraId: 'ob1', data: '2024-08-11', usuario: 'José Silva', usuarioId: 'u2', clima: 'nublado', trabalhadores: 6, servicosExecutados: 'Armação dos pilares do 2º pavimento. Alvenaria do térreo - parede dos quartos.', observacoes: 'Aço CA-50 10mm chegou com 1 dia de atraso.', problemas: 'Atraso na entrega do aço pelo fornecedor', fotos: [], status: 'aprovado' },
-  { id: 'd5', obraId: 'ob1', data: '2024-08-10', usuario: 'José Silva', usuarioId: 'u2', clima: 'sol', trabalhadores: 7, servicosExecutados: 'Desforma das vigas do 1º pavimento. Início da montagem de formas dos pilares do 2º pav.', observacoes: 'Vigas apresentaram boa qualidade. Sem fissuras aparentes.', problemas: '', fotos: [], status: 'aprovado' },
+  { id: 'd1', obraId: 'ob1', data: '2024-08-14', usuario: 'José Silva', usuarioId: 'u2', clima: 'sol', trabalhadores: 9, servicosExecutados: 'Concretagem da laje do 2º pavimento. Cura com manta úmida iniciada.', servicos: [{ id: 'ds1', descricao: 'Concretagem da laje do 2º pavimento', categoriaId: undefined, composicaoId: undefined }, { id: 'ds2', descricao: 'Cura com manta úmida' }], materiaisUtilizados: [{ id: 'dmu1', materialId: 'm1', materialNome: 'Cimento CP-II 50kg', unidade: 'saco', quantidade: 18 }, { id: 'dmu2', materialId: 'm3', materialNome: 'Brita 1', unidade: 'm³', quantidade: 4 }], observacoes: 'Concreto usinado fck 30MPa. Bomba lança operou normalmente.', problemas: '', fotos: [], status: 'aprovado' },
+  { id: 'd2', obraId: 'ob1', data: '2024-08-13', usuario: 'José Silva', usuarioId: 'u2', clima: 'chuva', trabalhadores: 4, servicosExecutados: 'Serviços internos - passagem de tubulação hidráulica no térreo. Instalação de caixas elétricas 4x2.', servicos: [{ id: 'ds3', descricao: 'Passagem de tubulação hidráulica no térreo' }, { id: 'ds4', descricao: 'Instalação de caixas elétricas 4x2' }], materiaisUtilizados: [{ id: 'dmu3', materialId: 'm6', materialNome: 'Tubo PVC 100mm esgoto', unidade: 'barra', quantidade: 3 }], observacoes: 'Chuva forte pela manhã impediu trabalho externo.', problemas: 'Chuva forte interrompeu serviços externos por 3 horas', fotos: [], status: 'pendente' },
+  { id: 'd3', obraId: 'ob1', data: '2024-08-12', usuario: 'José Silva', usuarioId: 'u2', clima: 'sol', trabalhadores: 8, servicosExecutados: 'Montagem de formas para laje do 2º pavimento. Armação de ferragem da laje.', servicos: [{ id: 'ds5', descricao: 'Montagem de formas para laje do 2º pavimento' }, { id: 'ds6', descricao: 'Armação de ferragem da laje' }], materiaisUtilizados: [], observacoes: 'Entrega de 80 barras de aço CA-50 12,5mm.', problemas: '', fotos: [], status: 'aprovado' },
+  { id: 'd4', obraId: 'ob1', data: '2024-08-11', usuario: 'José Silva', usuarioId: 'u2', clima: 'nublado', trabalhadores: 6, servicosExecutados: 'Armação dos pilares do 2º pavimento. Alvenaria do térreo - parede dos quartos.', servicos: [{ id: 'ds7', descricao: 'Armação dos pilares do 2º pavimento' }, { id: 'ds8', descricao: 'Alvenaria do térreo - parede dos quartos' }], materiaisUtilizados: [{ id: 'dmu4', materialId: 'm4', materialNome: 'Aço CA-50 10mm', unidade: 'barra', quantidade: 40 }, { id: 'dmu5', materialId: 'm5', materialNome: 'Tijolo cerâmico 9x19x19', unidade: 'un', quantidade: 400 }], observacoes: 'Aço CA-50 10mm chegou com 1 dia de atraso.', problemas: 'Atraso na entrega do aço pelo fornecedor', fotos: [], status: 'aprovado' },
+  { id: 'd5', obraId: 'ob1', data: '2024-08-10', usuario: 'José Silva', usuarioId: 'u2', clima: 'sol', trabalhadores: 7, servicosExecutados: 'Desforma das vigas do 1º pavimento. Início da montagem de formas dos pilares do 2º pav.', servicos: [{ id: 'ds9', descricao: 'Desforma das vigas do 1º pavimento' }, { id: 'ds10', descricao: 'Montagem de formas dos pilares do 2º pav' }], materiaisUtilizados: [], observacoes: 'Vigas apresentaram boa qualidade. Sem fissuras aparentes.', problemas: '', fotos: [], status: 'aprovado' },
   // Obra 3 – registros finais da reforma concluída
-  { id: 'd6', obraId: 'ob3', data: '2023-12-18', usuario: 'José Silva', usuarioId: 'u2', clima: 'sol', trabalhadores: 5, servicosExecutados: 'Limpeza final de toda a clínica. Instalação de placas de sinalização. Vistoria final.', observacoes: 'Obra entregue ao cliente conforme projeto. Todas as pendências resolvidas.', problemas: '', fotos: [], status: 'aprovado' },
-  { id: 'd7', obraId: 'ob3', data: '2023-12-17', usuario: 'José Silva', usuarioId: 'u2', clima: 'nublado', trabalhadores: 6, servicosExecutados: 'Pintura de retoques finais. Instalação de louças e metais dos banheiros restantes.', observacoes: 'Últimos ajustes antes da entrega.', problemas: '', fotos: [], status: 'aprovado' },
+  { id: 'd6', obraId: 'ob3', data: '2023-12-18', usuario: 'José Silva', usuarioId: 'u2', clima: 'sol', trabalhadores: 5, servicosExecutados: 'Limpeza final de toda a clínica. Instalação de placas de sinalização. Vistoria final.', servicos: [{ id: 'ds11', descricao: 'Limpeza final de toda a clínica' }, { id: 'ds12', descricao: 'Instalação de placas de sinalização' }, { id: 'ds13', descricao: 'Vistoria final' }], materiaisUtilizados: [], observacoes: 'Obra entregue ao cliente conforme projeto. Todas as pendências resolvidas.', problemas: '', fotos: [], status: 'aprovado' },
+  { id: 'd7', obraId: 'ob3', data: '2023-12-17', usuario: 'José Silva', usuarioId: 'u2', clima: 'nublado', trabalhadores: 6, servicosExecutados: 'Pintura de retoques finais. Instalação de louças e metais dos banheiros restantes.', servicos: [{ id: 'ds14', descricao: 'Pintura de retoques finais' }, { id: 'ds15', descricao: 'Instalação de louças e metais dos banheiros' }], materiaisUtilizados: [{ id: 'dmu6', materialId: 'm9', materialNome: 'Tinta acrílica branca 18L', unidade: 'lata', quantidade: 2 }], observacoes: 'Últimos ajustes antes da entrega.', problemas: '', fotos: [], status: 'aprovado' },
 ];
 
 // ── Mock Materiais ──

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEstoque } from '@/contexts/EstoqueContext';
+import { useObras } from '@/contexts/ObrasContext';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,17 +10,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  mockMateriais, mockMovimentacoes, mockObras, formatDate,
-  Material, MovimentacaoEstoque
-} from '@/data/mockData';
-import { Package, AlertTriangle, ArrowDownCircle, ArrowUpCircle, Plus, Search } from 'lucide-react';
+import { formatDate } from '@/data/mockData';
+import { Package, AlertTriangle, ArrowDownCircle, ArrowUpCircle, Search } from 'lucide-react';
 
 export default function EstoquePage() {
   const { user, hasPermission } = useAuth();
-  const obra = mockObras[0];
-  const [materiais, setMateriais] = useState<Material[]>(mockMateriais.filter(m => m.obraId === obra.id));
-  const [movimentacoes, setMovimentacoes] = useState<MovimentacaoEstoque[]>(mockMovimentacoes.filter(m => m.obraId === obra.id));
+  const { obras } = useObras();
+  const { getMateriaisByObra, getMovimentacoesByObra, registrarMovimentacao } = useEstoque();
+  const obra = obras[0];
+  const materiais = getMateriaisByObra(obra.id);
+  const movimentacoes = getMovimentacoesByObra(obra.id);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [movTipo, setMovTipo] = useState<'entrada' | 'saida'>('entrada');
@@ -34,7 +35,7 @@ export default function EstoquePage() {
     if (!material) return;
     const qty = parseInt(newMov.quantidade) || 0;
 
-    const mov: MovimentacaoEstoque = {
+    registrarMovimentacao({
       id: `mv${Date.now()}`,
       obraId: obra.id,
       materialId: material.id,
@@ -45,14 +46,7 @@ export default function EstoquePage() {
       origemDestino: newMov.origemDestino,
       responsavel: user?.name || '',
       observacoes: newMov.observacoes,
-    };
-
-    setMovimentacoes([mov, ...movimentacoes]);
-    setMateriais(materiais.map(m =>
-      m.id === material.id
-        ? { ...m, estoqueAtual: movTipo === 'entrada' ? m.estoqueAtual + qty : Math.max(0, m.estoqueAtual - qty) }
-        : m
-    ));
+    });
     setDialogOpen(false);
     setNewMov({ materialId: '', quantidade: '', origemDestino: '', observacoes: '' });
   };
@@ -115,7 +109,6 @@ export default function EstoquePage() {
         )}
       </div>
 
-      {/* Summary */}
       <div className="grid grid-cols-3 gap-4">
         <Card className="shadow-card">
           <CardContent className="p-4 text-center">
