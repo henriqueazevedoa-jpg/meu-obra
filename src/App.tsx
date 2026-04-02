@@ -50,7 +50,9 @@ function AppProviders({ children }: { children: React.ReactNode }) {
         <Sonner />
         <AuthProvider>
           <ObrasProvider>
-            <OrcamentoProvider>{children}</OrcamentoProvider>
+            <OrcamentoProvider>
+              <EstoqueProvider>{children}</EstoqueProvider>
+            </OrcamentoProvider>
           </ObrasProvider>
         </AuthProvider>
       </TooltipProvider>
