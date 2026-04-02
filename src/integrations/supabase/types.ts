@@ -658,7 +658,7 @@ export type Database = {
       is_obra_member: { Args: { _obra_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "gestor" | "funcionario" | "cliente"
+      app_role: "gestor" | "funcionario" | "cliente" | "admin"
       clima_tipo: "sol" | "nublado" | "chuva" | "chuvoso_forte"
       cronograma_status:
         | "nao_iniciada"
@@ -795,7 +795,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["gestor", "funcionario", "cliente"],
+      app_role: ["gestor", "funcionario", "cliente", "admin"],
       clima_tipo: ["sol", "nublado", "chuva", "chuvoso_forte"],
       cronograma_status: [
         "nao_iniciada",
