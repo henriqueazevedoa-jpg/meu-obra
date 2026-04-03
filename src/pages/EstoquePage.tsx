@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDate } from '@/data/mockData';
 import { Package, AlertTriangle, ArrowDownCircle, ArrowUpCircle, Search, Plus, Check, X } from 'lucide-react';
+import VoiceInputButton from '@/components/voice/VoiceInputButton';
 
 const categoriasEstoque = [
   'Cimento', 'Agregados', 'Aço', 'Alvenaria', 'Hidráulica', 'Elétrica',

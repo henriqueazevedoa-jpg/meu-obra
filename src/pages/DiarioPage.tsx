@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { formatDate, statusDiarioLabels, climaLabels, DiarioRegistro, DiarioServico, DiarioMaterialUsado } from '@/data/mockData';
 import { Plus, Users, CheckCircle2, Clock, XCircle, Trash2, Link2, Package, Pencil, CalendarIcon, Filter, ChevronDown, Printer, Square, CheckSquare } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import VoiceInputButton from '@/components/voice/VoiceInputButton';
 
 const statusIcons: Record<string, React.ReactNode> = {
   pendente: <Clock className="h-4 w-4 text-warning" />,

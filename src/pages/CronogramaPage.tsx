@@ -17,6 +17,7 @@ import { format, parseISO, differenceInDays, isAfter, isBefore } from 'date-fns'
 import { ptBR } from 'date-fns/locale';
 import { CalendarDays, AlertTriangle, CheckCircle2, Clock, Plus, Save, ChevronDown, ChevronRight, BarChart3, List, CalendarIcon } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import VoiceInputButton from '@/components/voice/VoiceInputButton';
 import { formatDate, statusEtapaLabels } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 

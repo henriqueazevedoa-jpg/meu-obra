@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency } from '@/data/mockData';
 import { DollarSign, TrendingUp, TrendingDown, Edit } from 'lucide-react';
+import VoiceInputButton from '@/components/voice/VoiceInputButton';
 import OrcamentoEditor from '@/components/orcamento/OrcamentoEditor';
 
 export default function OrcamentoPage() {
