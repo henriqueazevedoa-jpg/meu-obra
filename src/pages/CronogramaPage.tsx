@@ -264,6 +264,13 @@ export default function CronogramaPage() {
           <p className="text-muted-foreground text-sm">Acompanhamento das etapas da obra</p>
         </div>
         <div className="flex items-center gap-2">
+          <VoiceInputButton
+            module="cronograma"
+            obraId={selectedObraId}
+            onResult={(parsed) => {
+              toast({ title: 'Dados de voz recebidos', description: `Etapa: ${parsed.etapa || '?'}, Progresso: ${parsed.progresso || '?'}%` });
+            }}
+          />
           <Select value={selectedObraId} onValueChange={setSelectedObraId}>
             <SelectTrigger className="w-60">
               <SelectValue placeholder="Selecione a obra" />

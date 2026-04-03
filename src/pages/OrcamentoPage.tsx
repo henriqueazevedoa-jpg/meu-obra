@@ -39,6 +39,13 @@ export default function OrcamentoPage() {
           <p className="text-muted-foreground text-sm">Gestão orçamentária por obra</p>
         </div>
         <div className="flex items-center gap-2">
+          <VoiceInputButton
+            module="orcamento"
+            obraId={selectedObraId}
+            onResult={(parsed) => {
+              toast({ title: 'Dados de voz recebidos', description: `Item: ${parsed.item || '?'}, Qtd: ${parsed.quantidade || '?'}` });
+            }}
+          />
           <Select value={selectedObraId} onValueChange={setSelectedObraId}>
             <SelectTrigger className="w-60">
               <SelectValue placeholder="Selecione a obra" />
