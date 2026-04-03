@@ -514,6 +514,22 @@ ${toPrint.map(r => {
           </Select>
         </div>
         {canCreate && (
+          <div className="flex gap-1.5 shrink-0">
+            <VoiceInputButton
+              module="diario"
+              obraId={obra?.id}
+              onResult={(parsed) => {
+                if (parsed.clima) setClima(parsed.clima);
+                if (parsed.trabalhadores) setTrabalhadores(String(parsed.trabalhadores));
+                if (parsed.observacoes) setObservacoes(parsed.observacoes);
+                if (parsed.problemas) setProblemas(parsed.problemas);
+                if (parsed.servicos) {
+                  setServicos((parsed.servicos as string[]).map((s, i) => ({ id: `svc-v-${i}`, descricao: typeof s === 'string' ? s : (s as any).descricao || '' })));
+                }
+                setDialogOpen(true);
+                toast({ title: 'Dados de voz aplicados. Revise antes de salvar.' });
+              }}
+            />
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
               <Button size="sm" className="shrink-0 h-9 sm:h-10">
