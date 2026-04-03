@@ -12,6 +12,7 @@ import { formatCurrency } from '@/data/mockData';
 import { DollarSign, TrendingUp, TrendingDown, Edit } from 'lucide-react';
 import VoiceInputButton from '@/components/voice/VoiceInputButton';
 import OrcamentoEditor from '@/components/orcamento/OrcamentoEditor';
+import { toast } from '@/hooks/use-toast';
 
 export default function OrcamentoPage() {
   const { user } = useAuth();
