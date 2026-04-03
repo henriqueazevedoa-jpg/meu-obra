@@ -129,11 +129,12 @@ export default function LoginPage() {
               {/* Atalhos temporários para teste */}
               <div className="border border-dashed border-warning/50 rounded-lg p-3 space-y-2 bg-warning/5">
                 <p className="text-xs font-medium text-warning flex items-center gap-1">⚡ Acesso rápido (temporário)</p>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {[
                     { label: 'Gestor', email: 'gestor@teste.com' },
                     { label: 'Funcionário', email: 'funcionario@teste.com' },
                     { label: 'Cliente', email: 'cliente@teste.com' },
+                    { label: 'Admin', email: 'admin@teste.com' },
                   ].map(acc => (
                     <Button
                       key={acc.email}

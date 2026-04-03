@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,57 +12,31 @@ import { Building2, Users, HardHat, Shield, Settings, Puzzle, Mic } from 'lucide
 import { toast } from '@/hooks/use-toast';
 
 interface AdminCompany {
-  id: string;
-  nome: string;
-  cnpj: string;
-  email: string;
-  status: string;
-  plan_id: string | null;
-  plan_nome?: string;
-  obra_count: number;
-  gestor_count: number;
-  funcionario_count: number;
-  cliente_count: number;
-  addons: CompanyAddon[];
-  override?: PermOverride | null;
+  id: string; nome: string; cnpj: string; email: string; status: string;
+  plan_id: string | null; plan_nome?: string;
+  obra_count: number; gestor_count: number; funcionario_count: number; cliente_count: number;
+  addons: CompanyAddon[]; override?: PermOverride | null;
 }
-
 interface AdminPlan { id: string; slug: string; nome_comercial: string; }
-
 interface PermOverride {
-  id: string;
-  company_id: string;
-  max_obras: number | null;
-  max_gestores: number | null;
-  max_funcionarios: number | null;
-  max_clientes: number | null;
-  ilimitado: boolean;
+  id: string; company_id: string;
+  max_obras: number | null; max_gestores: number | null;
+  max_funcionarios: number | null; max_clientes: number | null; ilimitado: boolean;
 }
-
 interface AddonCatalogItem { code: string; nome: string; descricao: string; ativo: boolean; }
-
 interface CompanyAddon {
-  id: string;
-  company_id: string;
-  addon_code: string;
-  status: string;
-  trial_start: string | null;
-  trial_end: string | null;
+  id: string; company_id: string; addon_code: string; status: string;
+  trial_start: string | null; trial_end: string | null;
 }
 
-const statusLabels: Record<string, string> = {
-  ativo: 'Ativo', inativo: 'Inativo', suspenso: 'Suspenso', teste: 'Teste',
-};
+const statusLabels: Record<string, string> = { ativo: 'Ativo', inativo: 'Inativo', suspenso: 'Suspenso', teste: 'Teste' };
 const statusColors: Record<string, string> = {
   ativo: 'bg-green-100 text-green-800', inativo: 'bg-gray-100 text-gray-800',
   suspenso: 'bg-red-100 text-red-800', teste: 'bg-blue-100 text-blue-800',
 };
+const addonStatusLabels: Record<string, string> = { inactive: 'Inativo', trial: 'Trial', active: 'Ativo', expired: 'Expirado' };
 
-const addonStatusLabels: Record<string, string> = {
-  inactive: 'Inativo', trial: 'Trial', active: 'Ativo', expired: 'Expirado',
-};
-
-export default function AdminPage() {
+export default function AdminCompaniesPage() {
   const [companies, setCompanies] = useState<AdminCompany[]>([]);
   const [plans, setPlans] = useState<AdminPlan[]>([]);
   const [addonCatalog, setAddonCatalog] = useState<AddonCatalogItem[]>([]);
@@ -77,10 +51,8 @@ export default function AdminPage() {
       supabase.from('company_permission_overrides').select('*'),
       supabase.from('addon_catalog').select('*'),
     ]);
-
     if (plansData) setPlans(plansData as unknown as AdminPlan[]);
     if (catalogData) setAddonCatalog(catalogData as unknown as AddonCatalogItem[]);
-
     if (companiesData) {
       const enriched: AdminCompany[] = [];
       for (const c of companiesData as any[]) {
@@ -90,20 +62,14 @@ export default function AdminPage() {
           supabase.from('user_roles').select('*', { count: 'exact', head: true }).eq('company_id', c.id).eq('role', 'funcionario'),
           supabase.from('user_roles').select('*', { count: 'exact', head: true }).eq('company_id', c.id).eq('role', 'cliente'),
         ]);
-
         const matchPlan = plansData?.find((p: any) => p.id === c.plan_id) as any;
         const companyAddons = (addonsData as any[] || []).filter((a: any) => a.company_id === c.id);
         const override = (overridesData as any[] || []).find((o: any) => o.company_id === c.id) || null;
-
         enriched.push({
-          ...c,
-          plan_nome: matchPlan?.nome_comercial || '—',
-          obra_count: obraCount || 0,
-          gestor_count: gestorCount || 0,
-          funcionario_count: funcCount || 0,
-          cliente_count: clienteCount || 0,
-          addons: companyAddons,
-          override,
+          ...c, plan_nome: matchPlan?.nome_comercial || '—',
+          obra_count: obraCount || 0, gestor_count: gestorCount || 0,
+          funcionario_count: funcCount || 0, cliente_count: clienteCount || 0,
+          addons: companyAddons, override,
         });
       }
       setCompanies(enriched);
@@ -115,14 +81,11 @@ export default function AdminPage() {
 
   const updateCompanyPlan = async (companyId: string, planId: string) => {
     await supabase.from('companies').update({ plan_id: planId } as any).eq('id', companyId);
-    toast({ title: 'Plano atualizado' });
-    fetchData();
+    toast({ title: 'Plano atualizado' }); fetchData();
   };
-
   const updateCompanyStatus = async (companyId: string, status: string) => {
     await supabase.from('companies').update({ status } as any).eq('id', companyId);
-    toast({ title: 'Status atualizado' });
-    fetchData();
+    toast({ title: 'Status atualizado' }); fetchData();
   };
 
   const editingCompany = companies.find(c => c.id === editCompanyId);
@@ -132,11 +95,10 @@ export default function AdminPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center gap-3">
-        <Shield className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold text-foreground">Administração da Plataforma</h1>
+        <Building2 className="h-6 w-6 text-primary" />
+        <h1 className="text-2xl font-bold text-foreground">Empresas</h1>
       </div>
 
-      {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card><CardContent className="p-4 text-center">
           <Building2 className="h-5 w-5 mx-auto text-primary mb-1" />
@@ -160,7 +122,6 @@ export default function AdminPage() {
         </CardContent></Card>
       </div>
 
-      {/* Companies list */}
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">Empresas Cadastradas</h2>
         {companies.map(c => (
@@ -215,7 +176,6 @@ export default function AdminPage() {
         {companies.length === 0 && <p className="text-muted-foreground text-sm">Nenhuma empresa cadastrada.</p>}
       </div>
 
-      {/* Edit Company Dialog */}
       {editingCompany && (
         <CompanyEditDialog
           company={editingCompany}
@@ -228,20 +188,11 @@ export default function AdminPage() {
   );
 }
 
-function CompanyEditDialog({
-  company, plans, addonCatalog, onClose,
-}: {
-  company: AdminCompany;
-  plans: AdminPlan[];
-  addonCatalog: AddonCatalogItem[];
-  onClose: () => void;
+function CompanyEditDialog({ company, plans, addonCatalog, onClose }: {
+  company: AdminCompany; plans: AdminPlan[]; addonCatalog: AddonCatalogItem[]; onClose: () => void;
 }) {
   const [override, setOverride] = useState<PermOverride>(
-    company.override || {
-      id: '', company_id: company.id,
-      max_obras: null, max_gestores: null, max_funcionarios: null, max_clientes: null,
-      ilimitado: false,
-    }
+    company.override || { id: '', company_id: company.id, max_obras: null, max_gestores: null, max_funcionarios: null, max_clientes: null, ilimitado: false }
   );
   const [addons, setAddons] = useState<CompanyAddon[]>(company.addons);
   const [saving, setSaving] = useState(false);
@@ -250,29 +201,20 @@ function CompanyEditDialog({
     setSaving(true);
     const hasValues = override.max_obras !== null || override.max_gestores !== null ||
       override.max_funcionarios !== null || override.max_clientes !== null || override.ilimitado;
-
     if (company.override?.id && !hasValues) {
       await supabase.from('company_permission_overrides').delete().eq('id', company.override.id);
     } else if (company.override?.id) {
       await supabase.from('company_permission_overrides').update({
-        max_obras: override.max_obras,
-        max_gestores: override.max_gestores,
-        max_funcionarios: override.max_funcionarios,
-        max_clientes: override.max_clientes,
-        ilimitado: override.ilimitado,
+        max_obras: override.max_obras, max_gestores: override.max_gestores,
+        max_funcionarios: override.max_funcionarios, max_clientes: override.max_clientes, ilimitado: override.ilimitado,
       } as any).eq('id', company.override.id);
     } else if (hasValues) {
       await supabase.from('company_permission_overrides').insert({
-        company_id: company.id,
-        max_obras: override.max_obras,
-        max_gestores: override.max_gestores,
-        max_funcionarios: override.max_funcionarios,
-        max_clientes: override.max_clientes,
-        ilimitado: override.ilimitado,
+        company_id: company.id, max_obras: override.max_obras, max_gestores: override.max_gestores,
+        max_funcionarios: override.max_funcionarios, max_clientes: override.max_clientes, ilimitado: override.ilimitado,
       } as any);
     }
-    toast({ title: 'Limites salvos' });
-    setSaving(false);
+    toast({ title: 'Limites salvos' }); setSaving(false);
   };
 
   const toggleAddon = async (addonCode: string, currentStatus: string | undefined) => {
@@ -283,9 +225,7 @@ function CompanyEditDialog({
       setAddons(addons.map(a => a.id === existing.id ? { ...a, status: newStatus } : a));
     } else {
       const { data } = await supabase.from('company_addons').insert({
-        company_id: company.id,
-        addon_code: addonCode,
-        status: 'active',
+        company_id: company.id, addon_code: addonCode, status: 'active',
       } as any).select().single();
       if (data) setAddons([...addons, data as unknown as CompanyAddon]);
     }
@@ -296,19 +236,12 @@ function CompanyEditDialog({
     const existing = addons.find(a => a.addon_code === addonCode);
     const trialEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const trialStart = new Date().toISOString().split('T')[0];
-
     if (existing) {
-      await supabase.from('company_addons').update({
-        status: 'trial', trial_start: trialStart, trial_end: trialEnd,
-      } as any).eq('id', existing.id);
+      await supabase.from('company_addons').update({ status: 'trial', trial_start: trialStart, trial_end: trialEnd } as any).eq('id', existing.id);
       setAddons(addons.map(a => a.id === existing.id ? { ...a, status: 'trial', trial_start: trialStart, trial_end: trialEnd } : a));
     } else {
       const { data } = await supabase.from('company_addons').insert({
-        company_id: company.id,
-        addon_code: addonCode,
-        status: 'trial',
-        trial_start: trialStart,
-        trial_end: trialEnd,
+        company_id: company.id, addon_code: addonCode, status: 'trial', trial_start: trialStart, trial_end: trialEnd,
       } as any).select().single();
       if (data) setAddons([...addons, data as unknown as CompanyAddon]);
     }
@@ -319,14 +252,9 @@ function CompanyEditDialog({
     <Dialog open onOpenChange={() => onClose()}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            {company.nome}
-          </DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><Settings className="h-5 w-5" />{company.nome}</DialogTitle>
         </DialogHeader>
-
         <div className="space-y-6">
-          {/* Uso atual */}
           <div>
             <h3 className="text-sm font-semibold mb-2">Uso Atual</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
@@ -336,8 +264,6 @@ function CompanyEditDialog({
               <div className="flex justify-between p-2 bg-muted rounded"><span>Clientes</span><span className="font-bold">{company.cliente_count}</span></div>
             </div>
           </div>
-
-          {/* Overrides */}
           <div>
             <h3 className="text-sm font-semibold mb-2">Limites Customizados (Override)</h3>
             <p className="text-xs text-muted-foreground mb-3">Deixe vazio para usar os limites do plano</p>
@@ -347,30 +273,16 @@ function CompanyEditDialog({
             </div>
             {!override.ilimitado && (
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs">Máx. Obras</Label>
-                  <Input type="number" className="h-8" placeholder="Plano" value={override.max_obras ?? ''} onChange={e => setOverride({ ...override, max_obras: e.target.value ? parseInt(e.target.value) : null })} />
-                </div>
-                <div>
-                  <Label className="text-xs">Máx. Gestores</Label>
-                  <Input type="number" className="h-8" placeholder="Plano" value={override.max_gestores ?? ''} onChange={e => setOverride({ ...override, max_gestores: e.target.value ? parseInt(e.target.value) : null })} />
-                </div>
-                <div>
-                  <Label className="text-xs">Máx. Funcionários</Label>
-                  <Input type="number" className="h-8" placeholder="Plano" value={override.max_funcionarios ?? ''} onChange={e => setOverride({ ...override, max_funcionarios: e.target.value ? parseInt(e.target.value) : null })} />
-                </div>
-                <div>
-                  <Label className="text-xs">Máx. Clientes</Label>
-                  <Input type="number" className="h-8" placeholder="Plano" value={override.max_clientes ?? ''} onChange={e => setOverride({ ...override, max_clientes: e.target.value ? parseInt(e.target.value) : null })} />
-                </div>
+                {(['max_obras', 'max_gestores', 'max_funcionarios', 'max_clientes'] as const).map(field => (
+                  <div key={field}>
+                    <Label className="text-xs">Máx. {field.replace('max_', '').charAt(0).toUpperCase() + field.replace('max_', '').slice(1)}</Label>
+                    <Input type="number" className="h-8" placeholder="Plano" value={override[field] ?? ''} onChange={e => setOverride({ ...override, [field]: e.target.value ? parseInt(e.target.value) : null })} />
+                  </div>
+                ))}
               </div>
             )}
-            <Button size="sm" className="mt-3" onClick={saveOverride} disabled={saving}>
-              Salvar Limites
-            </Button>
+            <Button size="sm" className="mt-3" onClick={saveOverride} disabled={saving}>Salvar Limites</Button>
           </div>
-
-          {/* Add-ons */}
           <div>
             <h3 className="text-sm font-semibold mb-2">Add-ons</h3>
             <div className="space-y-2">
@@ -383,21 +295,13 @@ function CompanyEditDialog({
                       <div className="flex items-center gap-2">
                         <Mic className="h-4 w-4 text-primary" />
                         <span className="text-sm font-medium">{addon.nome}</span>
-                        {compAddon && (
-                          <Badge variant="secondary" className="text-[10px]">
-                            {addonStatusLabels[compAddon.status] || compAddon.status}
-                          </Badge>
-                        )}
+                        {compAddon && <Badge variant="secondary" className="text-[10px]">{addonStatusLabels[compAddon.status] || compAddon.status}</Badge>}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">{addon.descricao}</p>
-                      {compAddon?.trial_end && (
-                        <p className="text-[10px] text-muted-foreground">Trial até: {compAddon.trial_end}</p>
-                      )}
+                      {compAddon?.trial_end && <p className="text-[10px] text-muted-foreground">Trial até: {compAddon.trial_end}</p>}
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => startTrial(addon.code)}>
-                        Trial 14d
-                      </Button>
+                      <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => startTrial(addon.code)}>Trial 14d</Button>
                       <Switch checked={isActive} onCheckedChange={() => toggleAddon(addon.code, compAddon?.status)} />
                     </div>
                   </div>
