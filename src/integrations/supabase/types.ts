@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      addon_catalog: {
+        Row: {
+          ativo: boolean
+          code: string
+          created_at: string
+          descricao: string | null
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          code: string
+          created_at?: string
+          descricao?: string | null
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          code?: string
+          created_at?: string
+          descricao?: string | null
+          nome?: string
+        }
+        Relationships: []
+      }
       companies: {
         Row: {
           cnpj: string | null
@@ -54,6 +78,98 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_addons: {
+        Row: {
+          addon_code: string
+          company_id: string
+          created_at: string
+          id: string
+          status: string
+          trial_end: string | null
+          trial_start: string | null
+          updated_at: string
+        }
+        Insert: {
+          addon_code: string
+          company_id: string
+          created_at?: string
+          id?: string
+          status?: string
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+        }
+        Update: {
+          addon_code?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          status?: string
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_addons_addon_code_fkey"
+            columns: ["addon_code"]
+            isOneToOne: false
+            referencedRelation: "addon_catalog"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "company_addons_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_permission_overrides: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          ilimitado: boolean
+          max_clientes: number | null
+          max_funcionarios: number | null
+          max_gestores: number | null
+          max_obras: number | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          ilimitado?: boolean
+          max_clientes?: number | null
+          max_funcionarios?: number | null
+          max_gestores?: number | null
+          max_obras?: number | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          ilimitado?: boolean
+          max_clientes?: number | null
+          max_funcionarios?: number | null
+          max_gestores?: number | null
+          max_obras?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_permission_overrides_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -876,6 +992,63 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voice_inputs: {
+        Row: {
+          audio_path: string | null
+          company_id: string
+          confidence: number | null
+          created_at: string
+          id: string
+          module_origin: string
+          obra_id: string | null
+          parsed_json: Json | null
+          status: string
+          transcription: string | null
+          user_id: string
+        }
+        Insert: {
+          audio_path?: string | null
+          company_id: string
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          module_origin: string
+          obra_id?: string | null
+          parsed_json?: Json | null
+          status?: string
+          transcription?: string | null
+          user_id: string
+        }
+        Update: {
+          audio_path?: string | null
+          company_id?: string
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          module_origin?: string
+          obra_id?: string | null
+          parsed_json?: Json | null
+          status?: string
+          transcription?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_inputs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_inputs_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
             referencedColumns: ["id"]
           },
         ]
