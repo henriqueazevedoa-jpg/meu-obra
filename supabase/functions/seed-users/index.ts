@@ -48,8 +48,9 @@ Deno.serve(async (req) => {
     });
   }
 
-  // 4. Create users
+  // 4. Create users (including admin)
   const users = [
+    { email: "admin@teste.com", password: "123456", nome: "Admin Plataforma", role: "admin" as const },
     { email: "gestor@teste.com", password: "123456", nome: "Henrique Gestor", role: "gestor" as const },
     { email: "funcionario@teste.com", password: "123456", nome: "José Silva", role: "funcionario" as const },
     { email: "cliente@teste.com", password: "123456", nome: "Roberto Mendes", role: "cliente" as const },
@@ -59,19 +60,27 @@ Deno.serve(async (req) => {
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
     const existing = existingUsers?.users?.find((eu: any) => eu.email === u.email);
 
-    const userId = existing?.id || null;
+    const isAdmin = u.role === "admin";
 
     if (existing) {
-      await supabase.from("user_roles").upsert({ user_id: existing.id, role: u.role, company_id: companyId }, { onConflict: "user_id" });
-      await supabase.from("profiles").upsert({ user_id: existing.id, nome: u.nome, email: u.email, company_id: companyId }, { onConflict: "user_id" });
-      
-      const { data: obras } = await supabase.from("obras").select("id");
-      if (obras) {
-        for (const obra of obras) {
-          await supabase.from("obra_memberships").upsert(
-            { user_id: existing.id, obra_id: obra.id, role: u.role },
-            { onConflict: "user_id,obra_id" }
-          );
+      await supabase.from("user_roles").upsert(
+        { user_id: existing.id, role: u.role, company_id: isAdmin ? null : companyId },
+        { onConflict: "user_id" }
+      );
+      await supabase.from("profiles").upsert(
+        { user_id: existing.id, nome: u.nome, email: u.email, company_id: isAdmin ? null : companyId },
+        { onConflict: "user_id" }
+      );
+
+      if (!isAdmin) {
+        const { data: obras } = await supabase.from("obras").select("id");
+        if (obras) {
+          for (const obra of obras) {
+            await supabase.from("obra_memberships").upsert(
+              { user_id: existing.id, obra_id: obra.id, role: u.role },
+              { onConflict: "user_id,obra_id" }
+            );
+          }
         }
       }
       results.push({ email: u.email, role: u.role, userId: existing.id, action: "updated" });
@@ -91,13 +100,18 @@ Deno.serve(async (req) => {
     }
 
     const newUserId = authData.user.id;
-    await supabase.from("user_roles").upsert({ user_id: newUserId, role: u.role, company_id: companyId }, { onConflict: "user_id" });
-    await supabase.from("profiles").update({ company_id: companyId }).eq("user_id", newUserId);
+    await supabase.from("user_roles").upsert(
+      { user_id: newUserId, role: u.role, company_id: isAdmin ? null : companyId },
+      { onConflict: "user_id" }
+    );
+    await supabase.from("profiles").update({ company_id: isAdmin ? null : companyId }).eq("user_id", newUserId);
 
-    const { data: obras } = await supabase.from("obras").select("id");
-    if (obras) {
-      for (const obra of obras) {
-        await supabase.from("obra_memberships").insert({ user_id: newUserId, obra_id: obra.id, role: u.role });
+    if (!isAdmin) {
+      const { data: obras } = await supabase.from("obras").select("id");
+      if (obras) {
+        for (const obra of obras) {
+          await supabase.from("obra_memberships").insert({ user_id: newUserId, obra_id: obra.id, role: u.role });
+        }
       }
     }
 
