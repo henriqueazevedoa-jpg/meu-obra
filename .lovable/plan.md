@@ -1,74 +1,47 @@
 
-# Plano de Evolução para SaaS Multiempresa
+## O que já existe (não será refeito)
+- Tabelas: plans, companies, subscriptions, subscription_extras, profiles, user_roles
+- RLS por company_id em todas as tabelas
+- CompanyContext, usePlanLimits, AdminPage
+- Planos Start/Pro/Enterprise
 
-## Fase 1 — Modelagem de Dados (Migração SQL)
+## Fase 1: Ajustes de planos + Overrides + Add-ons (migração SQL)
 
-Criar as seguintes tabelas novas no banco:
+### 1.1 Atualizar limites dos planos existentes
+- Pro: 10 obras, 3 gestores, 5 funcionários, 5 clientes (era 5/2/4/4)
 
-### `plans` — Planos do sistema
-- `id`, `slug` (start/pro/enterprise), `nome_comercial`, `descricao`, `limite_obras`, `limite_gestores`, `limite_funcionarios`, `limite_clientes`, `ilimitado` (boolean), `ativo`, `created_at`, `updated_at`
-- Seed com os 3 planos: Start, Pro, Enterprise
+### 1.2 Criar tabela `company_permission_overrides`
+- company_id, max_obras, max_gestores, max_funcionarios, max_clientes, ilimitado
+- RLS: admin pode gerenciar, membros da empresa podem visualizar
 
-### `companies` — Empresas
-- `id`, `nome`, `cnpj`, `email`, `telefone`, `plan_id`, `status` (ativo/inativo/suspenso/teste), `created_at`, `updated_at`
+### 1.3 Criar tabelas de add-ons
+- `addon_catalog`: code, nome, descricao, ativo
+- `company_addons`: company_id, addon_code, status, trial_start, trial_end
+- Seed: addon `voice_ai` (Assistente por Voz IA)
 
-### `subscriptions` — Assinaturas
-- `id`, `company_id`, `plan_id`, `status` (trial/active/overdue/canceled/suspended), `ciclo` (mensal/anual), `data_inicio`, `data_vencimento`, `valor_base`, `moeda`, `gateway_id`, `trial_start`, `trial_end`, `observacoes`, `created_at`, `updated_at`
+### 1.4 Atualizar função `check_plan_limit` 
+- Verificar overrides primeiro, depois plano
 
-### `subscription_extras` — Extras futuros
-- `id`, `subscription_id`, `tipo` (usuario_extra/obra_extra/modulo_premium), `descricao`, `quantidade`, `valor_unitario`, `created_at`
+### 1.5 Criar tabela `voice_inputs`
+- id, company_id, user_id, obra_id, module_origin, audio_path, transcription, parsed_json, confidence, status, created_at
 
-### Alterações em tabelas existentes:
-- `profiles` → adicionar `company_id`, `status` (ativo/inativo)
-- `obras` → adicionar `company_id`
-- `user_roles` → adicionar `company_id`
-- Adicionar role `admin` ao enum `app_role`
+## Fase 2: Frontend - Admin evoluído
+- Adicionar na AdminPage: edição de overrides por empresa, gestão de add-ons
+- Mostrar add-ons ativos na lista de empresas
 
-### RLS — Row Level Security
-- Todas as tabelas filtradas por `company_id` do usuário autenticado
-- Função `get_user_company_id()` SECURITY DEFINER para consultas RLS
-- Função `is_platform_admin()` para admin global
-- Admin global pode ver/editar tudo
+## Fase 3: Frontend - Voz IA
+- Hook `useVoiceInput` com gravação, upload, transcrição e interpretação via edge function
+- Botão de gravação nos módulos: Diário, Estoque, Cronograma, Orçamento
+- Preview dos dados antes de salvar, campos incertos destacados
+- Verificação do add-on voice_ai antes de permitir uso
 
-## Fase 2 — Lógica de Limites (Backend)
-
-- Criar função SQL `check_plan_limit(company_id, resource_type)` que retorna se o limite foi atingido
-- Edge function `check-limits` para validação antes de criar obra/usuário
-- Ou validação client-side consultando contagens + plano
-
-## Fase 3 — Código Frontend
-
-### Contexto `CompanyContext`
-- Carregar empresa do usuário logado
-- Expor plano atual, limites e contagens
-- Hook `usePlanLimits()` para checar limites antes de ações
-
-### Onboarding
-- Após signup, fluxo de criar/vincular empresa
-- Escolha de plano
-- Criação do primeiro gestor
-
-### Controle de acesso
-- Validar limites ao criar obra, convidar usuário
-- Mensagens amigáveis de limite atingido
-- Sugestão de upgrade
-
-### Área Admin Global
-- Página `/admin` protegida por role `admin`
-- Listar empresas, planos, assinaturas
-- Alterar plano, suspender empresa
-- Ver uso atual (obras, usuários por role)
-
-## Fase 4 — Migração de Dados Existentes
-- Criar empresa padrão para dados existentes
-- Vincular obras e usuários existentes à empresa
-- Seed de dados de teste com a nova estrutura
+## Fase 4: Edge Function - Processamento de áudio
+- Edge function `process-voice` que recebe áudio, transcreve e interpreta com Lovable AI
+- Retorna JSON específico por módulo
+- Salva na tabela voice_inputs
 
 ## Ordem de execução
-1. Migração SQL (tabelas + RLS + seeds)
-2. Atualizar contextos e hooks
-3. Onboarding e fluxo de empresa
-4. Controle de limites no frontend
-5. Área admin global
-6. Migração dos dados existentes
-7. Atualizar seed-users edge function
+1. Migração SQL (tudo junto)
+2. Código frontend (admin + contexts)
+3. Edge function de voz
+4. Componentes de voz nos módulos

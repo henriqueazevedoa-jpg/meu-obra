@@ -10,7 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency } from '@/data/mockData';
 import { DollarSign, TrendingUp, TrendingDown, Edit } from 'lucide-react';
+import VoiceInputButton from '@/components/voice/VoiceInputButton';
 import OrcamentoEditor from '@/components/orcamento/OrcamentoEditor';
+import { toast } from '@/hooks/use-toast';
 
 export default function OrcamentoPage() {
   const { user } = useAuth();
@@ -38,6 +40,13 @@ export default function OrcamentoPage() {
           <p className="text-muted-foreground text-sm">Gestão orçamentária por obra</p>
         </div>
         <div className="flex items-center gap-2">
+          <VoiceInputButton
+            module="orcamento"
+            obraId={selectedObraId}
+            onResult={(parsed) => {
+              toast({ title: 'Dados de voz recebidos', description: `Item: ${parsed.item || '?'}, Qtd: ${parsed.quantidade || '?'}` });
+            }}
+          />
           <Select value={selectedObraId} onValueChange={setSelectedObraId}>
             <SelectTrigger className="w-60">
               <SelectValue placeholder="Selecione a obra" />

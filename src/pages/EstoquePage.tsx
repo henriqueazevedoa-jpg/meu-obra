@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatDate } from '@/data/mockData';
 import { Package, AlertTriangle, ArrowDownCircle, ArrowUpCircle, Search, Plus, Check, X } from 'lucide-react';
+import VoiceInputButton from '@/components/voice/VoiceInputButton';
 
 const categoriasEstoque = [
   'Cimento', 'Agregados', 'Aço', 'Alvenaria', 'Hidráulica', 'Elétrica',
@@ -104,6 +105,21 @@ export default function EstoquePage() {
         </div>
         {canMovimentar && (
           <div className="flex gap-1.5 shrink-0">
+            <VoiceInputButton
+              module="estoque"
+              obraId={obra?.id}
+              onResult={(parsed) => {
+                if (parsed.tipo) setMovTipo(parsed.tipo === 'saida' ? 'saida' : 'entrada');
+                if (parsed.material) {
+                  const mat = materiais.find(m => m.nome.toLowerCase().includes((parsed.material as string).toLowerCase()));
+                  if (mat) setNewMov(prev => ({ ...prev, materialId: mat.id }));
+                }
+                if (parsed.quantidade) setNewMov(prev => ({ ...prev, quantidade: String(parsed.quantidade) }));
+                if (parsed.origem_destino) setNewMov(prev => ({ ...prev, origemDestino: parsed.origem_destino }));
+                if (parsed.observacoes) setNewMov(prev => ({ ...prev, observacoes: parsed.observacoes }));
+                setDialogOpen(true);
+              }}
+            />
             <Dialog open={cadastroOpen} onOpenChange={setCadastroOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="h-9 px-2 sm:px-3">

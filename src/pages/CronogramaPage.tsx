@@ -17,6 +17,7 @@ import { format, parseISO, differenceInDays, isAfter, isBefore } from 'date-fns'
 import { ptBR } from 'date-fns/locale';
 import { CalendarDays, AlertTriangle, CheckCircle2, Clock, Plus, Save, ChevronDown, ChevronRight, BarChart3, List, CalendarIcon } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import VoiceInputButton from '@/components/voice/VoiceInputButton';
 import { formatDate, statusEtapaLabels } from '@/data/mockData';
 import { cn } from '@/lib/utils';
 
@@ -263,6 +264,13 @@ export default function CronogramaPage() {
           <p className="text-muted-foreground text-sm">Acompanhamento das etapas da obra</p>
         </div>
         <div className="flex items-center gap-2">
+          <VoiceInputButton
+            module="cronograma"
+            obraId={selectedObraId}
+            onResult={(parsed) => {
+              toast({ title: 'Dados de voz recebidos', description: `Etapa: ${parsed.etapa || '?'}, Progresso: ${parsed.progresso || '?'}%` });
+            }}
+          />
           <Select value={selectedObraId} onValueChange={setSelectedObraId}>
             <SelectTrigger className="w-60">
               <SelectValue placeholder="Selecione a obra" />
