@@ -696,6 +696,7 @@ ${toPrint.map(r => {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         )}
       </div>
 
