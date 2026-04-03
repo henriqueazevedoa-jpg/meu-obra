@@ -31,7 +31,7 @@ import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading, user } = useAuth();
   const { needsOnboarding, loading: companyLoading } = useCompany();
 
@@ -47,11 +47,6 @@ function ProtectedRoute({ children, adminOnly = false }: { children: React.React
     return <Navigate to="/" replace />;
   }
 
-  if (adminOnly && user?.role !== 'admin') {
-    return <Navigate to="/painel" replace />;
-  }
-
-  // Redirect to onboarding if user has no company (unless admin)
   if (needsOnboarding && user?.role !== 'admin') {
     return <Navigate to="/onboarding" replace />;
   }
@@ -135,7 +130,12 @@ function AppRoutes() {
         <Route path="/diario" element={<ProtectedRoute><DiarioPage /></ProtectedRoute>} />
         <Route path="/estoque" element={<ProtectedRoute><EstoquePage /></ProtectedRoute>} />
         <Route path="/perfil" element={<ProtectedRoute><PerfilPage /></ProtectedRoute>} />
-        <Route path="/admin" element={<ProtectedRoute adminOnly><AdminPage /></ProtectedRoute>} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Navigate to="/admin/companies" replace />} />
+          <Route path="companies" element={<AdminCompaniesPage />} />
+          <Route path="plans" element={<AdminPlansPage />} />
+          <Route path="addons" element={<AdminAddonsPage />} />
+        </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
