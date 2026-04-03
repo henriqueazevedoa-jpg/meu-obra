@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
   ];
 
   for (const u of users) {
-    const { data: existingUsers } = await supabase.auth.admin.listUsers();
+    const { data: existingUsers, error: listErr } = await supabase.auth.admin.listUsers({ perPage: 100 });
     const existing = existingUsers?.users?.find((eu: any) => eu.email === u.email);
 
     const isAdmin = u.role === "admin";
