@@ -23,7 +23,10 @@ import DiarioPage from "@/pages/DiarioPage";
 import EstoquePage from "@/pages/EstoquePage";
 import PainelObraPage from "@/pages/PainelObraPage";
 import PerfilPage from "@/pages/PerfilPage";
-import AdminPage from "@/pages/AdminPage";
+import AdminLayout from "@/pages/admin/AdminLayout";
+import AdminCompaniesPage from "@/pages/admin/AdminCompaniesPage";
+import AdminPlansPage from "@/pages/admin/AdminPlansPage";
+import AdminAddonsPage from "@/pages/admin/AdminAddonsPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
