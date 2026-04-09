@@ -22,6 +22,7 @@ import CronogramaPage from "@/pages/CronogramaPage";
 import DiarioPage from "@/pages/DiarioPage";
 import EstoquePage from "@/pages/EstoquePage";
 import PainelObraPage from "@/pages/PainelObraPage";
+import EquipePage from "@/pages/EquipePage";
 import PerfilPage from "@/pages/PerfilPage";
 import AdminLayout from "@/pages/admin/AdminLayout";
 import AdminCompaniesPage from "@/pages/admin/AdminCompaniesPage";
@@ -129,6 +130,7 @@ function AppRoutes() {
         <Route path="/cronograma" element={<ProtectedRoute><CronogramaPage /></ProtectedRoute>} />
         <Route path="/diario" element={<ProtectedRoute><DiarioPage /></ProtectedRoute>} />
         <Route path="/estoque" element={<ProtectedRoute><EstoquePage /></ProtectedRoute>} />
+        <Route path="/equipe" element={<ProtectedRoute><EquipePage /></ProtectedRoute>} />
         <Route path="/perfil" element={<ProtectedRoute><PerfilPage /></ProtectedRoute>} />
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="/admin/companies" replace />} />
