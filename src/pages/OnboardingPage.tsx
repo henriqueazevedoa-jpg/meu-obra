@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { HardHat, Building2, ArrowRight, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 
 export default function OnboardingPage() {
-  const { plans, createCompany, refreshCompany } = useCompany();
+  const { plans, refreshCompany } = useCompany();
   const navigate = useNavigate();
 
   const [step, setStep] = useState<'company' | 'plan'>('company');
@@ -41,55 +42,36 @@ export default function OnboardingPage() {
 
   const handleSubmit = async () => {
     if (!nome.trim()) {
-      toast({
-        title: 'Informe o nome da empresa',
-        variant: 'destructive',
-      });
+      toast({ title: 'Informe o nome da empresa', variant: 'destructive' });
       return;
     }
-
     if (plans.length === 0) {
-      toast({
-        title: 'Nenhum plano carregado',
-        description: 'Verifique a configuração da busca de planos no sistema.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Nenhum plano carregado', variant: 'destructive' });
       return;
     }
-
     if (!selectedPlan) {
-      toast({
-        title: 'Selecione um plano',
-        variant: 'destructive',
-      });
+      toast({ title: 'Selecione um plano', variant: 'destructive' });
       return;
     }
 
     try {
       setSubmitting(true);
 
-      const companyId = await createCompany({
-        nome: nome.trim(),
-        cnpj: cnpj.trim() || undefined,
-        email: email.trim() || undefined,
-        telefone: telefone.trim() || undefined,
-        planSlug: selectedPlan,
+      const { data, error } = await supabase.rpc('complete_onboarding', {
+        _nome: nome.trim(),
+        _cnpj: cnpj.trim(),
+        _email: email.trim(),
+        _telefone: telefone.trim(),
+        _plan_slug: selectedPlan,
       });
 
-      if (!companyId) {
-        throw new Error('Não foi possível criar a empresa. Verifique os planos carregados e a lógica do createCompany.');
-      }
+      if (error) throw new Error(error.message);
 
       await refreshCompany();
-
-      toast({
-        title: 'Empresa criada com sucesso!',
-      });
-
+      toast({ title: 'Empresa criada com sucesso!' });
       navigate('/painel', { replace: true });
     } catch (error: any) {
       console.error('Erro no onboarding:', error);
-
       toast({
         title: 'Erro ao criar empresa',
         description: error?.message || 'Falha inesperada no onboarding.',

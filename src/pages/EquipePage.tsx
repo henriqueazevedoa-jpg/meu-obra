@@ -83,13 +83,13 @@ export default function EquipePage() {
     setMembers(teamMembers);
 
     // Fetch invites
-    const { data: inviteData } = await supabase
+    const { data: inviteData } = await (supabase as any)
       .from('company_user_invites')
       .select('*')
       .eq('company_id', company.id)
       .order('created_at', { ascending: false });
 
-    setInvites((inviteData as unknown as Invite[]) || []);
+    setInvites((inviteData as Invite[]) || []);
 
     // Check limits
     const [gestores, funcionarios, clientes] = await Promise.all([

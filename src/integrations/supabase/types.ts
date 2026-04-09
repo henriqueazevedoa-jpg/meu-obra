@@ -174,6 +174,50 @@ export type Database = {
           },
         ]
       }
+      company_user_invites: {
+        Row: {
+          company_id: string
+          created_at: string
+          email: string
+          id: string
+          invited_by: string
+          nome: string
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          email: string
+          id?: string
+          invited_by: string
+          nome?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          invited_by?: string
+          nome?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_user_invites_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custo_real_itens: {
         Row: {
           categoria_id: string
@@ -1062,6 +1106,16 @@ export type Database = {
       check_plan_limit: {
         Args: { _company_id: string; _resource: string }
         Returns: Json
+      }
+      complete_onboarding: {
+        Args: {
+          _cnpj?: string
+          _email?: string
+          _nome: string
+          _plan_slug?: string
+          _telefone?: string
+        }
+        Returns: string
       }
       get_obra_from_categoria: { Args: { _cat_id: string }; Returns: string }
       get_obra_from_composicao: { Args: { _comp_id: string }; Returns: string }
