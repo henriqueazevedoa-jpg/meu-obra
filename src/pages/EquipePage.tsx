@@ -84,9 +84,9 @@ export default function EquipePage() {
 
     // Fetch invites
     const { data: inviteData } = await supabase
-      .from('company_user_invites')
+      .from('company_user_invites' as any)
       .select('*')
-      .eq('company_id', company.id)
+      .eq('company_id' as any, company.id)
       .order('created_at', { ascending: false });
 
     setInvites((inviteData as unknown as Invite[]) || []);
