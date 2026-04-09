@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { useEffect, useState } from 'react';
-=======
-import { useState } from 'react';
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
 import { useCompany } from '@/contexts/CompanyContext';
 import { useNavigate } from 'react-router-dom';
 import { HardHat, Building2, ArrowRight, Check, Loader2 } from 'lucide-react';
@@ -14,20 +10,14 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 
 export default function OnboardingPage() {
-<<<<<<< HEAD
   const { plans, createCompany, refreshCompany } = useCompany();
   const navigate = useNavigate();
 
-=======
-  const { plans, createCompany } = useCompany();
-  const navigate = useNavigate();
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
   const [step, setStep] = useState<'company' | 'plan'>('company');
   const [nome, setNome] = useState('');
   const [cnpj, setCnpj] = useState('');
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
-<<<<<<< HEAD
   const [selectedPlan, setSelectedPlan] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -107,24 +97,6 @@ export default function OnboardingPage() {
       });
     } finally {
       setSubmitting(false);
-=======
-  const [selectedPlan, setSelectedPlan] = useState('pro');
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleSubmit = async () => {
-    if (!nome.trim()) {
-      toast({ title: 'Informe o nome da empresa', variant: 'destructive' });
-      return;
-    }
-    setSubmitting(true);
-    const id = await createCompany({ nome, cnpj, email, telefone, planSlug: selectedPlan });
-    setSubmitting(false);
-    if (id) {
-      toast({ title: 'Empresa criada com sucesso!' });
-      navigate('/painel');
-    } else {
-      toast({ title: 'Erro ao criar empresa', variant: 'destructive' });
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
     }
   };
 
@@ -142,7 +114,6 @@ export default function OnboardingPage() {
             <HardHat className="h-10 w-10 text-primary" />
             <h1 className="text-3xl font-bold text-foreground">ObraFácil</h1>
           </div>
-<<<<<<< HEAD
           <p className="text-muted-foreground">
             Configure sua empresa para começar a usar o sistema
           </p>
@@ -186,20 +157,6 @@ export default function OnboardingPage() {
             >
               2
             </div>
-=======
-          <p className="text-muted-foreground">Configure sua empresa para começar a usar o sistema</p>
-        </div>
-
-        {/* Steps indicator */}
-        <div className="flex items-center justify-center gap-4">
-          <div className={cn("flex items-center gap-2 text-sm font-medium", step === 'company' ? 'text-primary' : 'text-muted-foreground')}>
-            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold", step === 'company' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>1</div>
-            Empresa
-          </div>
-          <div className="w-12 h-px bg-border" />
-          <div className={cn("flex items-center gap-2 text-sm font-medium", step === 'plan' ? 'text-primary' : 'text-muted-foreground')}>
-            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold", step === 'plan' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>2</div>
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
             Plano
           </div>
         </div>
@@ -211,7 +168,6 @@ export default function OnboardingPage() {
                 <Building2 className="h-5 w-5 text-primary" />
                 <h2 className="text-lg font-semibold">Dados da Empresa</h2>
               </div>
-<<<<<<< HEAD
 
               <div className="space-y-3">
                 <div>
@@ -254,32 +210,6 @@ export default function OnboardingPage() {
               </div>
 
               <Button className="w-full" onClick={handleGoToPlanStep}>
-=======
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium">Nome da Empresa *</label>
-                  <Input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Construtora Silva" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">CNPJ</label>
-                  <Input value={cnpj} onChange={e => setCnpj(e.target.value)} placeholder="00.000.000/0001-00" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">E-mail</label>
-                    <Input value={email} onChange={e => setEmail(e.target.value)} placeholder="contato@empresa.com" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Telefone</label>
-                    <Input value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(00) 00000-0000" />
-                  </div>
-                </div>
-              </div>
-              <Button className="w-full" onClick={() => {
-                if (!nome.trim()) { toast({ title: 'Informe o nome da empresa', variant: 'destructive' }); return; }
-                setStep('plan');
-              }}>
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
                 Próximo <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             </CardContent>
@@ -289,7 +219,6 @@ export default function OnboardingPage() {
         {step === 'plan' && (
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-center">Escolha seu plano</h2>
-<<<<<<< HEAD
 
             {plans.length === 0 ? (
               <Card>
@@ -355,40 +284,6 @@ export default function OnboardingPage() {
                 disabled={submitting || plans.length === 0}
                 className="flex-1"
               >
-=======
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {plans.map(p => (
-                <Card
-                  key={p.id}
-                  className={cn(
-                    "cursor-pointer transition-all hover:shadow-md",
-                    selectedPlan === p.slug ? "ring-2 ring-primary" : ""
-                  )}
-                  onClick={() => setSelectedPlan(p.slug)}
-                >
-                  <CardContent className="p-5 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-bold">{p.nome_comercial}</h3>
-                      {selectedPlan === p.slug && <Check className="h-5 w-5 text-primary" />}
-                    </div>
-                    {p.slug === 'pro' && <Badge className="bg-primary/10 text-primary text-xs">Mais popular</Badge>}
-                    <p className="text-xs text-muted-foreground">{p.descricao}</p>
-                    <ul className="space-y-1.5">
-                      {(planFeatures[p.slug] || []).map((f, i) => (
-                        <li key={i} className="flex items-center gap-2 text-sm">
-                          <Check className="h-3.5 w-3.5 text-primary shrink-0" />
-                          {f}
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setStep('company')} className="flex-1">Voltar</Button>
-              <Button onClick={handleSubmit} disabled={submitting} className="flex-1">
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
                 Criar Empresa
               </Button>
@@ -398,8 +293,4 @@ export default function OnboardingPage() {
       </div>
     </div>
   );
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642

@@ -2,11 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLocation, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Building2, DollarSign, CalendarDays,
-<<<<<<< HEAD
-  BookOpen, Package, User, LogOut, Menu, X, HardHat, Receipt, Shield
-=======
   BookOpen, Package, User, LogOut, Menu, X, HardHat, Receipt, Shield, Users
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -19,10 +15,7 @@ const gestorLinks = [
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
   { to: '/diario', label: 'Diário', icon: BookOpen },
   { to: '/estoque', label: 'Estoque', icon: Package },
-<<<<<<< HEAD
-=======
   { to: '/equipe', label: 'Equipe', icon: Users },
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
 ];
 
 const funcionarioLinks = [
@@ -76,10 +69,7 @@ const adminLinks = [
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
   { to: '/diario', label: 'Diário', icon: BookOpen },
   { to: '/estoque', label: 'Estoque', icon: Package },
-<<<<<<< HEAD
-=======
   { to: '/equipe', label: 'Equipe', icon: Users },
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
 ];
 
 const roleLabels: Record<string, string> = { admin: 'Admin', gestor: 'Gestor', funcionario: 'Funcionário', cliente: 'Cliente' };

@@ -57,7 +57,6 @@ interface CompanyContextType {
   needsOnboarding: boolean;
   checkLimit: (resource: 'obras' | 'gestores' | 'funcionarios' | 'clientes') => Promise<PlanLimitResult>;
   refreshCompany: () => Promise<void>;
-<<<<<<< HEAD
   createCompany: (data: {
     nome: string;
     cnpj?: string;
@@ -65,19 +64,12 @@ interface CompanyContextType {
     telefone?: string;
     planSlug: string;
   }) => Promise<string | null>;
-=======
-  createCompany: (data: { nome: string; cnpj?: string; email?: string; telefone?: string; planSlug: string }) => Promise<string | null>;
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
 }
 
 const CompanyContext = createContext<CompanyContextType | null>(null);
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated } = useAuth();
-<<<<<<< HEAD
-
-=======
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
   const [company, setCompany] = useState<Company | null>(null);
   const [plan, setPlan] = useState<Plan | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -86,7 +78,6 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   const fetchPlans = useCallback(async () => {
-<<<<<<< HEAD
     console.log('=== fetchPlans iniciado ===');
 
     const { data, error } = await supabase
@@ -105,10 +96,6 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     }
 
     setPlans((data || []) as unknown as Plan[]);
-=======
-    const { data } = await supabase.from('plans').select('*').eq('ativo', true).order('limite_obras');
-    if (data) setPlans(data as unknown as Plan[]);
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
   }, []);
 
   const fetchCompany = useCallback(async () => {
@@ -121,23 +108,17 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-<<<<<<< HEAD
     setLoading(true);
 
     console.log('=== fetchCompany iniciado ===');
     console.log('user.id:', user.id);
 
     const { data: profile, error: profileError } = await supabase
-=======
-    // Get user's company_id from profile
-    const { data: profile } = await supabase
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
       .from('profiles')
       .select('company_id')
       .eq('user_id', user.id)
       .single();
 
-<<<<<<< HEAD
     console.log('profile:', profile);
     console.log('profileError:', profileError);
 
@@ -149,31 +130,17 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
       setCompany(null);
       setPlan(null);
       setSubscription(null);
-=======
-    if (!profile?.company_id) {
-      // Check if user is platform admin - they don't need a company
-      if (user.role === 'admin') {
-        setNeedsOnboarding(false);
-        setLoading(false);
-        return;
-      }
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
       setNeedsOnboarding(true);
       setLoading(false);
       return;
     }
 
-<<<<<<< HEAD
     const { data: companyData, error: companyError } = await supabase
-=======
-    const { data: companyData } = await supabase
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
       .from('companies')
       .select('*')
       .eq('id', profile.company_id)
       .single();
 
-<<<<<<< HEAD
     console.log('companyData:', companyData);
     console.log('companyError:', companyError);
 
@@ -183,25 +150,16 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-=======
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
     if (companyData) {
       setCompany(companyData as unknown as Company);
       setNeedsOnboarding(false);
 
-<<<<<<< HEAD
       if (companyData.plan_id) {
         const { data: planData, error: planError } = await supabase
-=======
-      // Fetch plan
-      if (companyData.plan_id) {
-        const { data: planData } = await supabase
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
           .from('plans')
           .select('*')
           .eq('id', companyData.plan_id)
           .single();
-<<<<<<< HEAD
 
         console.log('planData:', planData);
         console.log('planError:', planError);
@@ -216,20 +174,12 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
       }
 
       const { data: subData, error: subError } = await supabase
-=======
-        if (planData) setPlan(planData as unknown as Plan);
-      }
-
-      // Fetch active subscription
-      const { data: subData } = await supabase
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
         .from('subscriptions')
         .select('*')
         .eq('company_id', companyData.id)
         .in('status', ['trial', 'active'])
         .order('created_at', { ascending: false })
         .limit(1)
-<<<<<<< HEAD
         .maybeSingle();
 
       console.log('subscriptionData:', subData);
@@ -240,10 +190,6 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
       } else {
         setSubscription(null);
       }
-=======
-        .single();
-      if (subData) setSubscription(subData as unknown as Subscription);
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
     }
 
     setLoading(false);
@@ -257,18 +203,14 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     if (isAuthenticated) {
       fetchCompany();
     } else {
-<<<<<<< HEAD
       setCompany(null);
       setPlan(null);
       setSubscription(null);
       setNeedsOnboarding(false);
-=======
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
       setLoading(false);
     }
   }, [isAuthenticated, fetchCompany]);
 
-<<<<<<< HEAD
   const checkLimit = useCallback(
     async (
       resource: 'obras' | 'gestores' | 'funcionarios' | 'clientes'
@@ -417,64 +359,6 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
         createCompany,
       }}
     >
-=======
-  const checkLimit = useCallback(async (resource: 'obras' | 'gestores' | 'funcionarios' | 'clientes'): Promise<PlanLimitResult> => {
-    if (!company) return { allowed: false, current: 0, limit: 0, plan: '', reason: 'Sem empresa vinculada' };
-
-    const { data, error } = await supabase.rpc('check_plan_limit', {
-      _company_id: company.id,
-      _resource: resource,
-    });
-
-    if (error || !data) return { allowed: false, current: 0, limit: 0, plan: '', reason: 'Erro ao verificar limite' };
-    return data as unknown as PlanLimitResult;
-  }, [company]);
-
-  const createCompany = useCallback(async (input: { nome: string; cnpj?: string; email?: string; telefone?: string; planSlug: string }) => {
-    if (!user) return null;
-
-    // Get plan
-    const targetPlan = plans.find(p => p.slug === input.planSlug);
-    if (!targetPlan) return null;
-
-    // Create company
-    const { data: newCompany, error } = await supabase.from('companies').insert({
-      nome: input.nome,
-      cnpj: input.cnpj || '',
-      email: input.email || user.email,
-      telefone: input.telefone || '',
-      plan_id: targetPlan.id,
-      status: 'ativo',
-    } as any).select().single();
-
-    if (error || !newCompany) return null;
-
-    const companyId = (newCompany as any).id;
-
-    // Create subscription
-    await supabase.from('subscriptions').insert({
-      company_id: companyId,
-      plan_id: targetPlan.id,
-      status: 'trial',
-      ciclo: 'mensal',
-      trial_start: new Date().toISOString().split('T')[0],
-      trial_end: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    } as any);
-
-    // Link user to company
-    await supabase.from('profiles').update({ company_id: companyId } as any).eq('user_id', user.id);
-    await supabase.from('user_roles').update({ company_id: companyId } as any).eq('user_id', user.id);
-
-    await fetchCompany();
-    return companyId;
-  }, [user, plans, fetchCompany]);
-
-  return (
-    <CompanyContext.Provider value={{
-      company, plan, subscription, plans, loading, needsOnboarding,
-      checkLimit, refreshCompany: fetchCompany, createCompany,
-    }}>
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
       {children}
     </CompanyContext.Provider>
   );
@@ -482,14 +366,8 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
 
 export function useCompany() {
   const ctx = useContext(CompanyContext);
-<<<<<<< HEAD
   if (!ctx) {
     throw new Error('useCompany must be used within CompanyProvider');
   }
   return ctx;
 }
-=======
-  if (!ctx) throw new Error('useCompany must be used within CompanyProvider');
-  return ctx;
-}
->>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
