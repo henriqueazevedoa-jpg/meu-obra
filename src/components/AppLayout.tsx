@@ -15,6 +15,7 @@ const gestorLinks = [
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
   { to: '/diario', label: 'Diário', icon: BookOpen },
   { to: '/estoque', label: 'Estoque', icon: Package },
+  { to: '/equipe', label: 'Equipe', icon: Users },
 ];
 
 const funcionarioLinks = [
@@ -68,6 +69,7 @@ const adminLinks = [
   { to: '/cronograma', label: 'Cronograma', icon: CalendarDays },
   { to: '/diario', label: 'Diário', icon: BookOpen },
   { to: '/estoque', label: 'Estoque', icon: Package },
+  { to: '/equipe', label: 'Equipe', icon: Users },
 ];
 
 const roleLabels: Record<string, string> = { admin: 'Admin', gestor: 'Gestor', funcionario: 'Funcionário', cliente: 'Cliente' };
