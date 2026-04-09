@@ -318,4 +318,8 @@ export default function EquipePage() {
       </Dialog>
     </div>
   );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642

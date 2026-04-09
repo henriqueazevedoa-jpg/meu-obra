@@ -174,6 +174,53 @@ export type Database = {
           },
         ]
       }
+<<<<<<< HEAD
+=======
+      company_user_invites: {
+        Row: {
+          company_id: string
+          created_at: string
+          email: string
+          id: string
+          invited_by: string
+          nome: string
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          email: string
+          id?: string
+          invited_by: string
+          nome?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          invited_by?: string
+          nome?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_user_invites_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+>>>>>>> 256a3dd282ca04d393f0b4783d8f890c0a719642
       custo_real_itens: {
         Row: {
           categoria_id: string
