@@ -1107,6 +1107,16 @@ export type Database = {
         Args: { _company_id: string; _resource: string }
         Returns: Json
       }
+      complete_onboarding: {
+        Args: {
+          _cnpj?: string
+          _email?: string
+          _nome: string
+          _plan_slug?: string
+          _telefone?: string
+        }
+        Returns: string
+      }
       get_obra_from_categoria: { Args: { _cat_id: string }; Returns: string }
       get_obra_from_composicao: { Args: { _comp_id: string }; Returns: string }
       get_obra_from_registro: { Args: { _reg_id: string }; Returns: string }
